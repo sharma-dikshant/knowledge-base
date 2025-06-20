@@ -1,145 +1,62 @@
 const Post = require("../models/postModel");
-const User = require("../models/userModel");
-const mongoose = require("mongoose");
-const Comment = require("../models/commentModel");
-// const natural = require("natural");
-// const stemmer = natural.PorterStemmer;
+const Comment = require("./../models/commentModel");
 
-// const stringSimilarity = require("string-similarity");
-
-//create post
 exports.createPost = async (req, res) => {
   try {
-    const {
-      Title,
-      Description,
-      solution,
-      category,
-      status,
-      employeeCode,
-      HashTags,
-      Department,
-    } = req.body;
+    console.log(req.body);
+    // const newPost = await Post.create(req.body, { new: true });
+    const newPost = await Post.create(req.body);
 
-    if (
-      !Title ||
-      !Description ||
-      !solution ||
-      !category ||
-      !status ||
-      !employeeCode ||
-      !Department
-    ) {
-      return res.status(400).json({ message: "all fields required" });
-    }
-
-    const user = await User.findOne({ EmployeeCode: employeeCode });
-    if (!user) {
-      return res.status(404).json({ message: "user no found" });
-    }
-    const newPost = new Post({
-      Title: Title,
-      Description: Description,
-      Solution: solution,
-      Upvote: [],
-      DownVote: [],
-      Category: category,
-      Status: status,
-      author: user.Username,
-      authorId: user._id,
-      Posthistory: [],
-      HashTags: HashTags || [],
-      Department: Department,
+    return res.status(200).json({
+      status: "success",
+      data: newPost,
     });
-
-    await newPost.save();
-
-    return res.status(201).json({ message: "post create sucessfully" });
   } catch (error) {
-    return res.status(500).json({ message: "internal server error", error });
+    return res.status(400).json({
+      status: "failed",
+      message: error.message,
+      error,
+    });
   }
 };
-
-//update post
 
 exports.updatePost = async (req, res) => {
   try {
-    const { employeeCode, PostId, Solution, ...data } = req.body;
-
-    if (!employeeCode || !PostId) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    const user = await User.findOne({ EmployeeCode: employeeCode });
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    const post = await Post.findById(PostId);
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
-    }
-
-    // Debugging: Log values before updating
-    // console.log("Old Solution:", post.Solution);
-    // console.log("New Solution:", Solution);
-
-    // Ensure Posthistory exists as an array
-    if (!Array.isArray(post.Posthistory)) {
-      post.Posthistory = [];
-    }
-
-    // If solution is being updated, store the old solution in history
-    if (Solution && post.Solution !== Solution) {
-      post.Posthistory.push({
-        Solution: post.Solution,
-        createdAt: post.updatedAt || post.createdAt,
+    const newPost = await Post.findByIdAndUpdate(req.params.postId, req.body, {
+      new: true,
+    });
+    if (!newPost) {
+      return res.status(400).json({
+        status: "failed",
+        message: "no post found with given id",
       });
-
-      post.markModified("Posthistory");
-      // Ensure Posthistory is marked as modified
-      post.Solution = Solution;
     }
-    console.log(post.Posthistory);
-    // Update other fields
-    Object.assign(post, data);
-    post.updatedAt = new Date();
-
-    // Save the updated post and log errors if any
-    try {
-      await post.save();
-    } catch (saveError) {
-      console.error("Error saving post:", saveError);
-      return res
-        .status(500)
-        .json({ message: "Error saving post", error: saveError });
-    }
-
-    return res.status(200).json({ message: "Post updated successfully", post });
+    return res.status(200).json({
+      status: "success",
+      data: newPost,
+    });
   } catch (error) {
-    console.error("Error updating post:", error);
-    return res.status(500).json({ message: "Internal server error", error });
+    return res.status(400).json({
+      status: "failed",
+      message: error.mesage,
+      error,
+    });
   }
 };
 
-exports.getPost = async (req, res) => {
+exports.getPostbyAuthor = async (req, res) => {
   try {
-    const { authorId } = req.params;
-    if (!authorId) {
-      return res.status(400).json({ message: "authorId required" });
-    }
-
-    const Posts = await Post.find({ authorId: authorId });
-
-    if (!Posts) {
-      return res.status(404).json({ mesage: "no posts found" });
-    }
-
-    return res
-      .status(201)
-      .json({ message: "posts fetched successfully", data: Posts });
+    const posts = await Post.find({ author: req.params.authorId });
+    return res.status(200).json({
+      status: "success",
+      posts,
+    });
   } catch (error) {
-    return res.status(500).json({ message: "internal server error" });
+    return res.status(400).json({
+      status: "failed",
+      message: error.mesage,
+      error,
+    });
   }
 };
 
@@ -147,7 +64,7 @@ exports.getAllPosts = async (req, res) => {
   try {
     const posts = await Post.find(); // Fetch all posts from the database
 
-    if (!posts || posts.length === 0) {
+    if (posts.length == 0) {
       return res.status(404).json({ message: "No posts found" });
     }
 
@@ -163,24 +80,18 @@ exports.getAllPosts = async (req, res) => {
 // delete post >
 exports.deletePost = async (req, res) => {
   try {
-    const { PostId } = req.params;
-
-    const post = await Post.findById({ _id: PostId });
-
-    if (!post) {
-      return res.status(404).json({ message: "post not found" });
+    const deletedPost = await Post.findByIdAndDelete(req.params.postId, {
+      new: true,
+    });
+    if (!deletedPost) {
+      return res.status(400).json({
+        status: "failed",
+        message: "no post found!",
+      });
     }
-    const user = await User.findById(post.authorId);
-    if (
-      user._id === post.authorId ||
-      user.RoleId.includes(1) ||
-      user.RoleId.includes(3)
-    ) {
-      await Post.findByIdAndDelete({ _id: PostId });
-      return res.status(201).json({ message: "post deleted sucessfully" });
-    } else {
-      return res.status(404).json({ message: "unauthorised user" });
-    }
+    return res.status(204).json({
+      status: "success",
+    });
   } catch (error) {
     console.log("error occured", error);
     return res.status(500).json({ message: "internal server error", error });
@@ -189,42 +100,39 @@ exports.deletePost = async (req, res) => {
 //upvote Post
 exports.upVote = async (req, res) => {
   try {
-    const { postId, userId } = req.body;
+    const postId = req.params.postId;
+    const userId = req.body.userId;
+    //1 check if user already upvoted
+    let post = await Post.findById(postId);
+    if (!post || !userId) {
+      return res.status(400).json({
+        status: "failed",
+        message: !userId ? "userId is not provided" : "no post found",
+      });
+    }
+    //2 remove from downVote if presen
+    post.downVotes = post.downVotes.filter((uid) => uid.toString() !== userId);
 
-    // Validate input
-    if (!postId || !userId) {
-      return res
-        .status(400)
-        .json({ message: "postId and userId are required" });
+    //3 add to upVote is not Present
+    if (!post.upVotes.some((uid) => uid.toString() === userId)) {
+      post.upVotes.push(userId);
     }
 
-    const post = await Post.findById(postId);
-
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
-    }
-
-    const userObjectId = new mongoose.Types.ObjectId(userId);
-
-    // Check if user already downvoted
-    if (post.Upvote.some((id) => id.equals(userObjectId))) {
-      return res.status(200).json({ message: "Already downvoted" });
-    }
-
-    // Remove user from Upvote if exists
-    if (post.DownVote.some((id) => id.equals(userObjectId))) {
-      console.log("User in upvote, removing...");
-      post.DownVote = post.DownVote.filter((id) => !id.equals(userObjectId));
-    }
-
-    // Add user to DownVote
-    post.Upvote.push(userObjectId);
     await post.save();
 
-    return res.status(201).json({ message: "Vote added successfully" });
+    return res.status(200).json({
+      status: "success",
+      votes: {
+        upVotes: post.upVotes.length,
+        downVotes: post.downVotes.length,
+      },
+    });
   } catch (error) {
     console.error("Error in upvote function:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(400).json({
+      status: "failed",
+      message: error.mesage,
+    });
   }
 };
 
@@ -232,116 +140,132 @@ exports.upVote = async (req, res) => {
 
 exports.downVote = async (req, res) => {
   try {
-    const { postId, userId } = req.body;
+    try {
+      const postId = req.params.postId;
+      const userId = req.body.userId;
+      //1 check if user already upvoted
+      let post = await Post.findById(postId);
+      if (!post || !userId) {
+        return res.status(400).json({
+          status: "failed",
+          message: !userId ? "userId is not provided" : "no post found",
+        });
+      }
+      //2 remove from upVotes if presen
+      post.upVotes = post.upVotes.filter((uid) => uid.toString() !== userId);
 
-    // Validate input
-    if (!postId || !userId) {
-      return res
-        .status(400)
-        .json({ message: "postId and userId are required" });
+      //3 add to downVote is not Present
+      if (!post.downVotes.some((uid) => uid.toString() === userId)) {
+        post.downVotes.push(userId);
+      }
+
+      await post.save();
+
+      return res.status(200).json({
+        status: "success",
+        votes: {
+          upVotes: post.upVotes.length,
+          downVotes: post.downVotes.length,
+        },
+      });
+    } catch (error) {
+      console.error("Error in upvote function:", error);
+      return res.status(400).json({
+        status: "failed",
+        message: error.message,
+      });
     }
-
-    const post = await Post.findById(postId);
-
-    if (!post) {
-      return res.status(404).json({ message: "Post not found" });
-    }
-
-    const userObjectId = new mongoose.Types.ObjectId(userId);
-
-    // Check if user already downvoted
-    if (post.DownVote.some((id) => id.equals(userObjectId))) {
-      return res.status(200).json({ message: "Already downvoted" });
-    }
-
-    // Remove user from Upvote if exists
-    if (post.Upvote.some((id) => id.equals(userObjectId))) {
-      console.log("User in upvote, removing...");
-      post.Upvote = post.Upvote.filter((id) => !id.equals(userObjectId));
-    }
-
-    // Add user to DownVote
-    post.DownVote.push(userObjectId);
-    await post.save();
-    console.log(post);
-
-    return res.status(201).json({ message: "Downvote added successfully" });
   } catch (error) {
     console.error("Error in downvote function:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
 
+exports.getVotes = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.postId);
+    if (!post) {
+      return res.status(400).json({
+        status: "failed",
+        message: "no post found",
+      });
+    }
+
+    return res.status(200).json({
+      status: "success",
+      votes: {
+        upVotes: post.upVotes.length,
+        downVotes: post.downVotes.length,
+      },
+    });
+  } catch (error) {
+    return res.status(400).json({
+      status: "failed",
+      message: error.mesage,
+      errror,
+    });
+  }
+};
+
 //createcommet
 exports.createComment = async (req, res) => {
   try {
-    const { userId, PostId, Content } = req.body;
-    if (!userId || !PostId || !Content) {
-      return res.status(400).json({ message: "all parameter required" });
-    }
-
-    const newComment = new Comment({
-      authorId: userId,
-      postId: PostId,
-      comment: Content,
+    const newComment = await Comment.create({
+      ...req.body,
+      post: req.params.postId,
     });
 
-    const savedComment = await newComment.save();
-    res.status(201).json({ message: "comment saved successfully" });
+    return res.status(201).json({
+      status: "success",
+      data: newComment,
+    });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ message: "internal server error", error });
+    return res.status(400).json({
+      status: "failed",
+      message: error.message,
+      error,
+    });
   }
 };
 exports.deleteComment = async (req, res) => {
   try {
-    const { CommentId } = req.params;
-    if (!CommentId) {
-      return res.status(400).json({ message: "commentId Required" });
+    const deletedComment = await Comment.findByIdAndDelete(
+      req.params.commentId,
+      { new: true }
+    );
+    if (!deletedComment) {
+      return res.status(400).json({
+        status: "failed",
+        message: "no doc found!",
+      });
     }
-    console.log("comment id retrieved");
-    const Commentdata = await Comment.findById(CommentId);
-    if (!Commentdata) {
-      return res.status(404).json({ message: "no such comment" });
-    }
-    console.log("comment is retrieved");
-    const user = await User.findById({ _id: Commentdata.authorId });
-    if (!user) {
-      return res.status(404).json({ message: "user not found" });
-    }
-    console.log("user retrieved");
-    if (
-      user._id === Commentdata.authorId ||
-      user.RoleId.includes(1) ||
-      user.RoleId.includes(3)
-    ) {
-      await Comment.findByIdAndDelete(CommentId);
-      return res.status(201).json({ message: "commnet deleted sucessfully" });
-    } else {
-      return res.status(400).json({ message: "you are not authorised" });
-    }
-  } catch (error) {}
+    return res.status(204).json({
+      status: "success",
+    });
+  } catch (error) {
+    return res.status(400).json({
+      status: "failed",
+      message: error.message,
+      error,
+    });
+  }
 };
 exports.getAllPostComment = async (req, res) => {
   try {
-    const { postId } = req.query; // Use camelCase
+    console.log(req.params.postId);
+    const comments = await Comment.find({ post: req.params.postId });
 
-    if (!postId) {
-      return res.status(400).json({ message: "postId is required" });
-    }
-
-    const postComments = await Comment.find({ postId });
-
-    if (postComments.length === 0) {
-      return res.status(200).json({ message: "No comments found", data: [] });
-    }
-
-    return res
-      .status(200)
-      .json({ message: "Comments fetched successfully", data: postComments });
+    return res.status(200).json({
+      status: "success",
+      comments,
+    });
   } catch (error) {
-    console.error("Error fetching comments:", error);
-    return res.status(500).json({ message: "Internal server error", error });
+    return res.status(400).json({
+      status: "failed",
+      message: error.mesage,
+      error,
+    });
   }
 };
 
@@ -349,20 +273,27 @@ exports.getTopUpvotedPosts = async (req, res) => {
   try {
     // Fetch all posts and sort by Upvote count (length of Upvote array) in descending order
     const topPosts = await Post.find()
-      .sort({ Upvote: -1 }) // Sorts based on the number of upvotes
+      .sort({ upVotes: -1 }) // Sorts based on the number of upvotes
       .limit(5); // Retrieves the top 5 posts
 
-    if (!topPosts || topPosts.length === 0) {
+    if (topPosts.length == 0) {
       return res.status(404).json({ message: "No posts found" });
     }
-    console.log(topPosts);
-    return res.status(200).json({ topPosts });
+    return res.status(200).json({
+      status: "success",
+      data: topPosts,
+    });
   } catch (error) {
     console.error("Error fetching top upvoted posts:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(400).json({
+      status: "failed",
+      message: error.message,
+      error,
+    });
   }
 };
 
+//TODO implement search post
 exports.searchPosts = async (req, res) => {
   try {
     const { query, page = 1, limit = 10 } = req.query;

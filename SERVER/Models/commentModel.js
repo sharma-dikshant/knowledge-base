@@ -1,10 +1,26 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const CommentSchema = new mongoose.Schema({
-    comment: { type: String, required: true },  
-    authorId: { type: String, required: true }, // ID of the user who made the comment
-    postId: { type: String, required: true }, // ID of the post the comment belongs to
-    createdAt: { type: Date, default: Date.now } // Timestamp for when the comment was made
-});
+const commentSchema = mongoose.Schema(
+  {
+    content: {
+      type: String,
+      required: [true, "comment content is required"],
+    },
 
-module.exports = mongoose.model('Comment', CommentSchema);
+    author: {
+      type: mongoose.Schema.ObjectId,
+      ref: "User",
+      required: [true, "author is required to create solution"],
+    },
+
+    post: {
+      type: mongoose.Schema.ObjectId,
+      ref: "Post",
+      required: [true, "post is required to create solution"],
+    },
+  },
+  { timestamps: true }
+);
+
+const Comment = mongoose.model("Comment", commentSchema);
+module.exports = Comment;

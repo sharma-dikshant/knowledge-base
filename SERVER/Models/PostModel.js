@@ -2,23 +2,40 @@ const mongoose = require("mongoose");
 
 const postSchema = new mongoose.Schema(
   {
-    Title: { type: String, required: true },
-    Description: { type: String, required: true },
-    Solution: { type: String, required: true },
-    Upvote: [{ userId: String, userName: String }], // Store userId and userName
-    DownVote: [{ userId: String, userName: String }],
-    Category: { type: String, require: true },
-    Status: { type: Number, require: true },
-    author: { type: String, require: true },
-    authorId: { type: String, require: true },
-    Posthistory: [
-      { Solution: { type: String, required: true }, createdAt: { type: Date } },
-    ],
-    HashTags: [{ type: String }],
-    Department: { type: String, require: true },
+    title: { type: String, required: [true, "post must have title"] },
+    description: {
+      type: String,
+      required: [true, "post must have description"],
+    },
+    upVotes: [{ type: mongoose.Schema.ObjectId, ref: "User" }],
+    downVotes: [{ type: mongoose.Schema.ObjectId, ref: "User" }],
+    category: { type: String, required: true },
+    status: {
+      //* pending, reviewed, verified
+      type: String,
+      required: [true, "post must have valid status"],
+      enum: ["pending", "reviewed", "verified"],
+      default: "pending",
+    },
+    author: {
+      type: mongoose.Schema.ObjectId,
+      ref: "User",
+      required: [true, "post must have author"],
+    },
+
+    hashtags: [{ type: String }],
+    department: { type: String, required: true },
   },
   { timestamps: true }
 );
 
 const Post = mongoose.model("Post", postSchema);
 module.exports = Post;
+
+//TODO post history is still not implemented
+// postHistory: [
+//   {
+//     solutions: { type: String, required: true },
+//     createdAt: { type: Date },
+//   },
+// ],

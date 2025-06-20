@@ -5,17 +5,20 @@ const authMiddleware = require("../Middleware/AuthMiddleware");
 const router = express.Router();
 
 router.post("/createPost", postController.createPost);
-router.post("/updatePost", postController.updatePost);
-router.delete("/deletePost/:PostId", postController.deletePost);
-router.post("/upVote", postController.upVote);
-router.post("/downVote", postController.downVote);
+router.patch("/updatePost/:postId", postController.updatePost);
+router.delete("/deletePost/:postId", postController.deletePost);
 router.get("/getPosts", postController.getAllPosts);
-router.get("/getUserPost/:authorId", postController.getPost);
+router.get("/getUserPost/:authorId", postController.getPostbyAuthor);
 router.get("/getTopfivePosts", postController.getTopUpvotedPosts);
 
-router.post("/createComment", postController.createComment);
-router.get("/getAllPostComment", postController.getAllPostComment);
-router.delete("/deleteComment/:CommentId", postController.deleteComment);
+router.post("/upVote/:postId", postController.upVote);
+router.post("/downVote/:postId", postController.downVote);
+router.get("/getVotes/:postId", postController.getVotes);
+
+router.post("/comment/:postId", postController.createComment);
+router.delete("/comment/:commentId", postController.deleteComment);
+router.get("/getAllComment/:postId", postController.getAllPostComment);
+
 router.get("/search", postController.searchPosts);
 router.get("/filterByDepartment", postController.filterPostsByDepartment);
 

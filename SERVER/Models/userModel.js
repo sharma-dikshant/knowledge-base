@@ -2,14 +2,22 @@ const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
   {
-    Username: { type: String, required: true },
-    EmployeeCode: { type: Number, required: true, unique: true },
-    Password: { type: String, required: true },
-    Role: [{ type: String, require: true, default: ["user"] }],
-    RoleId: [{ type: Number, require: true, default: [1] }],
-    Email: { type: String, required: false },
-    Grade: { type: String, required: true },
-    Department: { type: String, required: true },
+    name: { type: String, required: [true, "user must have name"] },
+    employeeId: {
+      type: Number,
+      required: [true, "user must have employee Id"],
+      unique: true,
+    },
+    password: { type: String, required: [true, "password is required"] },
+    role: {
+      type: String,
+      enum: ["user", "moderator", "admin"],
+      required: true,
+      default: "user",
+    },
+    email: { type: String, required: false },
+    grade: { type: String, required: false },
+    department: { type: String, required: false }, //TODO if user is admin or moderator then only they should specify department
   },
   { timestamps: true }
 );
