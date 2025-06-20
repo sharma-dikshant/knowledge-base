@@ -1,7 +1,7 @@
-const Post = require("../Models/PostModel");
-const User = require("../Models/User.model");
+const Post = require("../models/postModel");
+const User = require("../models/userModel");
 const mongoose = require("mongoose");
-const Comment = require("../Models/Comment");
+const Comment = require("../models/commentModel");
 // const natural = require("natural");
 // const stemmer = natural.PorterStemmer;
 

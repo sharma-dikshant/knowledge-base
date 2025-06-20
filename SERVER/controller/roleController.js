@@ -1,6 +1,6 @@
 // Create a new Role
-const Roles = require("../Models/Role.model");
-const User = require("../Models/User.model");
+const Roles = require("../models/roleModel");
+const User = require("../models/userModel");
 const bcrypt = require("bcryptjs");
 const createRole = async (req, res) => {
   try {

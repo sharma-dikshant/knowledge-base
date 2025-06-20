@@ -2,7 +2,7 @@ const {
   getRoles,
   createRole,
   createAdmin,
-} = require("../controller/CreateRole.controller");
+} = require("../controller/roleController");
 const express = require("express");
 const router = express.Router();
 router.post("/createAdmin", createAdmin);
