@@ -1,0 +1,159 @@
+/* Main container */
+.MainBodyClass {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f9;
+}
+
+/* Navigation Bar */
+.navclass {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #003366;
+    color: white;
+    padding: 15px 20px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.section1 svg {
+    font-size: 1.8rem;
+    cursor: pointer;
+    transition: transform 0.3s ease-in-out;
+}
+
+.section1 svg:hover {
+    transform: scale(1.1);
+}
+
+.section2 h1 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0;
+}
+
+/* Main Body */
+.Body {
+    display: flex;
+    flex: 1;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Sidebar (Desktop) */
+.bodySection1sidebar {
+    width: 250px;
+    background: #003366;
+    color: white;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+    transition: width 0.3s ease-in-out;
+    text-align: center;
+}
+
+.sidebarlist {
+    margin-top: 50px;
+}
+
+.sidebarul {
+    text-decoration: none;
+    color: white;
+    list-style: none;
+    padding: 15px 0;
+    cursor: pointer;
+    font-size: 1.3rem;
+    transition: background 0.3s ease-in-out;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+    border-top: 1px solid white;
+    border-bottom: 1px solid white;
+    margin-top: 2px;
+}
+
+.sidebarul:hover {
+    background: #00509d;
+    padding-left: 10px;
+    border-radius: 5px;
+}
+
+/* Navbar placeholder when sidebar is hidden */
+.bodySection1navbar {
+    width: 80px;
+    background: #003366;
+    color: white;
+    font-size: 2rem;
+    transition: width 0.3s ease-in-out;
+    text-align: center;
+}
+
+/* Content area */
+.bodySection2 {
+    flex: 1;
+    padding: 20px;
+    background: white;
+    transition: margin-left 0.3s ease-in-out;
+}
+
+.bodySectionnav2 {
+    flex: 1;
+    padding: 20px;
+    background: white;
+}
+
+/* Footer */
+.footerClass {
+    background: #003366;
+    color: white;
+    text-align: center;
+    padding: 10px;
+    font-size: 1rem;
+    box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* ─────────────────────────────────────────── */
+/* MOBILE RESPONSIVE DESIGN */
+/* ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .Body {
+        flex-direction: column;
+    }
+
+    /* Hide Desktop Sidebar */
+    .bodySection1sidebar, .bodySection1navbar {
+        display: none;
+    }
+
+    /* Mobile Sidebar (Bottom Navigation Bar) */
+    .mobileSidebar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: #003366;
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 0;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .mobileSidebar ul {
+        list-style: none;
+        color: white;
+        font-size: 1rem;
+        text-align: center;
+        cursor: pointer;
+        padding: 10px 0;
+        transition: background 0.3s ease-in-out;
+    }
+
+    .mobileSidebar ul:hover {
+        background: #00509d;
+        border-radius: 5px;
+    }
+
+    .mobileSidebar svg {
+        font-size: 1.5rem;
+    }
+}

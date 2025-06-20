@@ -1,0 +1,109 @@
+.topSection {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    flex-direction: column;
+    background-image: url('https://ssl.gstatic.com/support/content/images/static/homepage_header_background_v2.svg');
+    height: 50vh;
+    z-index: 100;
+}
+
+.searchBar {
+    padding: 10px;
+    font-size: 1rem;
+    width: 90%;
+    border: none;
+    outline: none;
+}
+
+.searchsection {
+    width: 40%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 0.5px solid gray;
+    border-radius: 20px;
+    background-color: white;
+    padding: 5px 10px;
+}
+
+.logo {
+    height: 12vh;
+    width: 6vw;
+}
+
+.topsection1 {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    gap: 2vh;
+}
+
+/* .homepageBody {
+    overflow-y: scroll;
+   
+
+} */
+
+.midSection {
+    text-align: center;
+    padding: 20px;
+}
+
+.faqList {
+    list-style: none;
+    padding: 0;
+}
+
+.faqItem {
+    background: #f8f9fa;
+    margin: 10px auto;
+    padding: 15px;
+    width: 80%;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    text-align: left;
+}
+.faqItem:hover{
+    background-color: orange;
+}
+
+.faqItem h3 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.faqItem p {
+    margin-top: 5px;
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.BottomSection {
+    text-align: center;
+    padding: 20px;
+}
+
+.departmentsContainer {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.departmentBox {
+    background: #007bff;
+    color: white;
+    padding: 15px;
+    width: 120px;
+    text-align: center;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    font-weight: bold;
+}
+.departmentBox:hover{
+    background-color: orange;
+}

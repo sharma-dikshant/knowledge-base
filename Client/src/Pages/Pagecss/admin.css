@@ -1,0 +1,90 @@
+/* Main Container */
+.admin-container {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+h2 {
+    text-align: center;
+    color: #003366;
+}
+
+/* Search Bar */
+.search-input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Table Styling */
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border: 1px solid #ddd;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background: #003366;
+    color: white;
+    font-weight: bold;
+}
+
+tr:hover {
+    background: #f1f1f1;
+}
+
+/* Buttons */
+button {
+    border: none;
+    padding: 8px 12px;
+    margin: 2px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    border-radius: 5px;
+}
+
+.view-btn {
+    background: #17a2b8;
+    color: white;
+}
+
+.edit-btn {
+    background: #28a745;
+    color: white;
+}
+
+.delete-btn {
+    background: #dc3545;
+    color: white;
+}
+
+button:hover {
+    opacity: 0.8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    th, td {
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+
+    button {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+    }
+}
