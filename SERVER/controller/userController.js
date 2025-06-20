@@ -1,5 +1,5 @@
 const User = require("../models/userModel");
-const Roles = require("../models/roleModel");
+// const Roles = require("../models/roleModel");
 const bcrypt = require("bcryptjs");
 
 exports.createUser = async (req, res) => {
