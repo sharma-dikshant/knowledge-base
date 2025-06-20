@@ -1,6 +1,6 @@
 const Department = require("../models/departmentModel");
 
-const DepartmentController = async (req, res) => {
+exports.createDepartment = async (req, res) => {
   try {
     const { department, departmentid } = req.body;
     if (!department || !departmentid) {
@@ -27,7 +27,7 @@ const DepartmentController = async (req, res) => {
   }
 };
 
-const GetDepartment = async (req, res) => {
+exports.getDepartment = async (req, res) => {
   try {
     const department = await Department.find();
     if (!department) {
@@ -40,5 +40,3 @@ const GetDepartment = async (req, res) => {
     return res.status(500).json({ message: "internal server error" });
   }
 };
-
-module.exports = { GetDepartment, DepartmentController };

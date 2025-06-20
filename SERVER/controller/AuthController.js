@@ -6,13 +6,13 @@ const CryptoJS = require("crypto-js");
 
 const { generateCaptcha } = require("../Captcha/Captcha");
 
-const getCaptcha = (req, res) => {
+exports.getCaptcha = (req, res) => {
   const captcha = generateCaptcha();
   req.session.captcha = captcha.text.toUpperCase(); // Store CAPTCHA in session
   res.json({ image: captcha.image });
 };
 
-const Login = async (req, res) => {
+exports.login = async (req, res) => {
   try {
     const { EmployeeCode, Password, captchaInput } = req.body;
     console.log(req.body);
@@ -66,5 +66,3 @@ const Login = async (req, res) => {
     res.status(500).json({ message: "Internal server error", error });
   }
 };
-
-module.exports = { Login, getCaptcha };

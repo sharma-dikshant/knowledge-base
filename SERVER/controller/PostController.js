@@ -8,7 +8,7 @@ const Comment = require("../models/commentModel");
 // const stringSimilarity = require("string-similarity");
 
 //create post
-const createPost = async (req, res) => {
+exports.createPost = async (req, res) => {
   try {
     const {
       Title,
@@ -62,7 +62,7 @@ const createPost = async (req, res) => {
 
 //update post
 
-const updatePost = async (req, res) => {
+exports.updatePost = async (req, res) => {
   try {
     const { employeeCode, PostId, Solution, ...data } = req.body;
 
@@ -122,7 +122,7 @@ const updatePost = async (req, res) => {
   }
 };
 
-const getPost = async (req, res) => {
+exports.getPost = async (req, res) => {
   try {
     const { authorId } = req.params;
     if (!authorId) {
@@ -143,7 +143,7 @@ const getPost = async (req, res) => {
   }
 };
 
-const getAllPosts = async (req, res) => {
+exports.getAllPosts = async (req, res) => {
   try {
     const posts = await Post.find(); // Fetch all posts from the database
 
@@ -161,7 +161,7 @@ const getAllPosts = async (req, res) => {
 };
 
 // delete post >
-const deletePost = async (req, res) => {
+exports.deletePost = async (req, res) => {
   try {
     const { PostId } = req.params;
 
@@ -187,7 +187,7 @@ const deletePost = async (req, res) => {
   }
 };
 //upvote Post
-const upvote = async (req, res) => {
+exports.upVote = async (req, res) => {
   try {
     const { postId, userId } = req.body;
 
@@ -230,7 +230,7 @@ const upvote = async (req, res) => {
 
 //DownPost
 
-const Downvote = async (req, res) => {
+exports.downVote = async (req, res) => {
   try {
     const { postId, userId } = req.body;
 
@@ -273,7 +273,7 @@ const Downvote = async (req, res) => {
 };
 
 //createcommet
-const createComment = async (req, res) => {
+exports.createComment = async (req, res) => {
   try {
     const { userId, PostId, Content } = req.body;
     if (!userId || !PostId || !Content) {
@@ -293,7 +293,7 @@ const createComment = async (req, res) => {
     res.status(500).json({ message: "internal server error", error });
   }
 };
-const DeleteComment = async (req, res) => {
+exports.deleteComment = async (req, res) => {
   try {
     const { CommentId } = req.params;
     if (!CommentId) {
@@ -322,7 +322,7 @@ const DeleteComment = async (req, res) => {
     }
   } catch (error) {}
 };
-const getAllPostComment = async (req, res) => {
+exports.getAllPostComment = async (req, res) => {
   try {
     const { postId } = req.query; // Use camelCase
 
@@ -345,7 +345,7 @@ const getAllPostComment = async (req, res) => {
   }
 };
 
-const getTopUpvotedPosts = async (req, res) => {
+exports.getTopUpvotedPosts = async (req, res) => {
   try {
     // Fetch all posts and sort by Upvote count (length of Upvote array) in descending order
     const topPosts = await Post.find()
@@ -363,7 +363,7 @@ const getTopUpvotedPosts = async (req, res) => {
   }
 };
 
-const searchPosts = async (req, res) => {
+exports.searchPosts = async (req, res) => {
   try {
     const { query, page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * parseInt(limit);
@@ -461,7 +461,7 @@ function detectCategory(queryLower) {
   }
   return null;
 }
-const filterPostsByDepartment = async (req, res) => {
+exports.filterPostsByDepartment = async (req, res) => {
   try {
     const { department, page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * limit;
@@ -485,20 +485,4 @@ const filterPostsByDepartment = async (req, res) => {
     console.error("Error filtering posts:", error);
     res.status(500).json({ message: "Internal server error", error });
   }
-};
-
-module.exports = {
-  createPost,
-  filterPostsByDepartment,
-  createComment,
-  getAllPostComment,
-  updatePost,
-  deletePost,
-  searchPosts,
-  upvote,
-  getTopUpvotedPosts,
-  Downvote,
-  DeleteComment,
-  getAllPosts,
-  getPost,
 };

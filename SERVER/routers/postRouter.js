@@ -1,36 +1,22 @@
 const express = require("express");
-const {
-  createPost,
-  createComment,
-  filterPostsByDepartment,
-  updatePost,
-  searchPosts,
-  getAllPostComment,
-  deletePost,
-  upvote,
-  getTopUpvotedPosts,
-  Downvote,
-  DeleteComment,
-  getAllPosts,
-  getPost,
-} = require("../controller/postController");
+const postController = require("../controller/postController");
 const authMiddleware = require("../Middleware/AuthMiddleware");
 
 const router = express.Router();
 
-router.post("/createPost", createPost);
-router.post("/updatePost", updatePost);
-router.delete("/DeletePost/:PostId", deletePost);
-router.post("/upvote", upvote);
-router.post("/downvote", Downvote);
-router.get("/getPosts", getAllPosts);
-router.get("/getUserPost/:authorId", getPost);
-router.get("/getTopfivePosts", getTopUpvotedPosts);
+router.post("/createPost", postController.createPost);
+router.post("/updatePost", postController.updatePost);
+router.delete("/deletePost/:PostId", postController.deletePost);
+router.post("/upVote", postController.upVote);
+router.post("/downVote", postController.downVote);
+router.get("/getPosts", postController.getAllPosts);
+router.get("/getUserPost/:authorId", postController.getPost);
+router.get("/getTopfivePosts", postController.getTopUpvotedPosts);
 
-router.post("/createcomment", createComment);
-router.get("/getAllPostcomment", getAllPostComment);
-router.delete("/DeleteComment/:CommentId", DeleteComment);
-router.get("/search", searchPosts);
-router.get("/filterByDepartment", filterPostsByDepartment);
+router.post("/createComment", postController.createComment);
+router.get("/getAllPostComment", postController.getAllPostComment);
+router.delete("/deleteComment/:CommentId", postController.deleteComment);
+router.get("/search", postController.searchPosts);
+router.get("/filterByDepartment", postController.filterPostsByDepartment);
 
 module.exports = router;

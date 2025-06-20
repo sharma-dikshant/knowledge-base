@@ -2,7 +2,7 @@ const User = require("../models/userModel");
 const Roles = require("../models/roleModel");
 const bcrypt = require("bcryptjs");
 
-const createUser = async (req, res) => {
+exports.createUser = async (req, res) => {
   try {
     const {
       username,
@@ -65,7 +65,7 @@ const createUser = async (req, res) => {
 };
 //update user
 
-const updateUser = async (req, res) => {
+exports.updateUser = async (req, res) => {
   try {
     const { employeeCode, ...updateFields } = req.body; // Extract `employeeCode` and other fields
 
@@ -111,7 +111,7 @@ const updateUser = async (req, res) => {
 
 //delete userdata
 
-const DeleteUser = async (req, res) => {
+exports.deleteUser = async (req, res) => {
   try {
     const { employeeCode } = req.body;
     if (!employeeCode) {
@@ -128,6 +128,3 @@ const DeleteUser = async (req, res) => {
     return res.status(500).json({ message: "Internal server error", error });
   }
 };
-
-// Export Controllers
-module.exports = { createUser, updateUser, DeleteUser };
