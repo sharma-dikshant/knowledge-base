@@ -1,70 +1,7 @@
 const User = require("../models/userModel");
-// const Roles = require("../models/roleModel");
-const bcrypt = require("bcryptjs");
 
-exports.createUser = async (req, res) => {
-  try {
-    const {
-      username,
-      employeeCode,
-      role,
-      Grade,
-      Department,
-      Email,
-      Password,
-      roleId,
-    } = req.body;
-
-    if (
-      !username ||
-      !employeeCode ||
-      !role ||
-      !Grade ||
-      !Department ||
-      !Email ||
-      !Password ||
-      !roleId
-    ) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-    console.log(employeeCode);
-    const roleExists = await Roles.findOne({ RoleId: roleId });
-    if (!roleExists) {
-      return res.status(404).json({ message: "Role not found" });
-    }
-
-    const existingUser = await User.findOne({ EmployeeCode: employeeCode });
-    if (existingUser) {
-      return res.status(400).json({ message: "user already exist" });
-    }
-
-    const hashedpassword = await bcrypt.hash(Password, 10);
-    if (!role.includes("user")) {
-      role.push("user");
-    }
-    if (!roleId.includes(1)) {
-      roleId.push(2);
-    }
-    const newUser = new User({
-      Username: username,
-      EmployeeCode: employeeCode,
-      Role: role,
-      RoleId: roleId,
-      Grade: Grade,
-      Department: Department,
-      Email: Email,
-      Password: hashedpassword,
-    });
-    await newUser.save();
-    console.log("i am here");
-    res.status(201).json({ message: "user create successfully" });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "internal server error", error });
-  }
-};
+//TODO user controller
 //update user
-
 exports.updateUser = async (req, res) => {
   try {
     const { employeeCode, ...updateFields } = req.body; // Extract `employeeCode` and other fields
@@ -110,7 +47,6 @@ exports.updateUser = async (req, res) => {
 };
 
 //delete userdata
-
 exports.deleteUser = async (req, res) => {
   try {
     const { employeeCode } = req.body;
