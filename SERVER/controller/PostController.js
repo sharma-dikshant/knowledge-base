@@ -5,7 +5,7 @@ exports.createPost = async (req, res) => {
   try {
     console.log(req.body);
     // const newPost = await Post.create(req.body, { new: true });
-    const newPost = await Post.create(req.body);
+    const newPost = await Post.create({ ...req.body, author: req.user._id });
 
     return res.status(200).json({
       status: "success",
@@ -61,8 +61,34 @@ exports.getPostbyAuthor = async (req, res) => {
 };
 
 exports.getAllPosts = async (req, res) => {
+  // sorting
+  // pagination
   try {
-    const posts = await Post.find(); // Fetch all posts from the database
+    let query = Post.find();
+
+    /**
+     * sorting
+     * based of time of created => createdAt, -createdAt
+     * based of upVotes => upVotes, -upVotes
+     */
+    if (req.query.sort) {
+      const sortQ = req.query.sort.split(",").join(" ");
+      query = query.sort(sortQ);
+    }
+
+    /**
+     * Pagination
+     * page => page no
+     * limit => no. of results
+     */
+
+    const page = req.query.page || 1;
+    const limit = req.query.limit || 10;
+    const skipped = (page - 1) * limit;
+    query = query.skip(skipped).limit(limit);
+
+    // Fetch all posts in desired way from the database
+    const posts = await query; //TODO remove upVotes and downVotes array
 
     if (posts.length == 0) {
       return res.status(404).json({ message: "No posts found" });
@@ -101,7 +127,7 @@ exports.deletePost = async (req, res) => {
 exports.upVote = async (req, res) => {
   try {
     const postId = req.params.postId;
-    const userId = req.body.userId;
+    const userId = req.user._id;
     //1 check if user already upvoted
     let post = await Post.findById(postId);
     if (!post || !userId) {
@@ -142,7 +168,7 @@ exports.downVote = async (req, res) => {
   try {
     try {
       const postId = req.params.postId;
-      const userId = req.body.userId;
+      const userId = req.user._id;
       //1 check if user already upvoted
       let post = await Post.findById(postId);
       if (!post || !userId) {
@@ -212,6 +238,7 @@ exports.createComment = async (req, res) => {
   try {
     const newComment = await Comment.create({
       ...req.body,
+      author: req.user._id,
       post: req.params.postId,
     });
 

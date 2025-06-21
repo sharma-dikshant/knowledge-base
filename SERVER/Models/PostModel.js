@@ -26,8 +26,16 @@ const postSchema = new mongoose.Schema(
     hashtags: [{ type: String }],
     department: { type: String, required: true },
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
+
+// setting virtual properties for upVoteCount and downVoteCount
+postSchema.virtual("upVoteCount").get(function () {
+  return this.upVotes?.length || 0;
+});
+postSchema.virtual("downVoteCount").get(function () {
+  return this.downVotes?.length || 0;
+});
 
 const Post = mongoose.model("Post", postSchema);
 module.exports = Post;
