@@ -30,10 +30,10 @@ const departmentOptions = [
 ];
 
 const filterOptions = [
-  { name: "Recent", value: "createdAt" },
+  { name: "Recent", value: "-createdAt" },
   {
     name: "Popular",
-    value: "votes",
+    value: "-votes",
   },
 ];
 
