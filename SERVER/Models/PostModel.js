@@ -7,6 +7,7 @@ const postSchema = new mongoose.Schema(
       type: String,
       required: [true, "post must have description"],
     },
+    votes: { type: Number, default: 0 },
     upVotes: [{ type: mongoose.Schema.ObjectId, ref: "User" }],
     downVotes: [{ type: mongoose.Schema.ObjectId, ref: "User" }],
     category: { type: String, required: true },
@@ -30,12 +31,12 @@ const postSchema = new mongoose.Schema(
 );
 
 // setting virtual properties for upVoteCount and downVoteCount
-postSchema.virtual("upVoteCount").get(function () {
-  return this.upVotes?.length || 0;
-});
-postSchema.virtual("downVoteCount").get(function () {
-  return this.downVotes?.length || 0;
-});
+// postSchema.virtual("upVoteCount").get(function () {
+//   return this.upVotes?.length || 0;
+// });
+// postSchema.virtual("downVoteCount").get(function () {
+//   return this.downVotes?.length || 0;
+// });
 
 const Post = mongoose.model("Post", postSchema);
 module.exports = Post;

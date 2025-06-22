@@ -88,7 +88,7 @@ exports.getAllPosts = async (req, res) => {
     query = query.skip(skipped).limit(limit);
 
     // Fetch all posts in desired way from the database
-    const posts = await query; //TODO remove upVotes and downVotes array
+    const posts = await query.select("-__v -upVotes -downVotes");
 
     if (posts.length == 0) {
       return res.status(404).json({ message: "No posts found" });
@@ -139,19 +139,17 @@ exports.upVote = async (req, res) => {
     //2 remove from downVote if presen
     post.downVotes = post.downVotes.filter((uid) => uid.toString() !== userId);
 
-    //3 add to upVote is not Present
+    //3 add to upVote if not Present
     if (!post.upVotes.some((uid) => uid.toString() === userId)) {
       post.upVotes.push(userId);
+      post.votes += 1;
     }
 
     await post.save();
 
     return res.status(200).json({
       status: "success",
-      votes: {
-        upVotes: post.upVotes.length,
-        downVotes: post.downVotes.length,
-      },
+      votes: post.votes,
     });
   } catch (error) {
     console.error("Error in upvote function:", error);
@@ -181,7 +179,11 @@ exports.downVote = async (req, res) => {
       post.upVotes = post.upVotes.filter((uid) => uid.toString() !== userId);
 
       //3 add to downVote is not Present
-      if (!post.downVotes.some((uid) => uid.toString() === userId)) {
+      if (
+        !post.downVotes.some((uid) => uid.toString() === userId) &&
+        post.votes > 0
+      ) {
+        post.votes -= 1;
         post.downVotes.push(userId);
       }
 
@@ -189,10 +191,7 @@ exports.downVote = async (req, res) => {
 
       return res.status(200).json({
         status: "success",
-        votes: {
-          upVotes: post.upVotes.length,
-          downVotes: post.downVotes.length,
-        },
+        votes: post.votes,
       });
     } catch (error) {
       console.error("Error in upvote function:", error);
@@ -219,10 +218,7 @@ exports.getVotes = async (req, res) => {
 
     return res.status(200).json({
       status: "success",
-      votes: {
-        upVotes: post.upVotes.length,
-        downVotes: post.downVotes.length,
-      },
+      votes: post.votes,
     });
   } catch (error) {
     return res.status(400).json({
