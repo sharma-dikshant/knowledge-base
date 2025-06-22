@@ -5,6 +5,7 @@ const authController = require("./../controller/authController");
 
 const router = express.Router();
 
+router.get("/detail/:postId", postController.getPostDetails);
 router.get("/getTopfivePosts", postController.getTopUpvotedPosts);
 router.get("/getPosts", postController.getAllPosts);
 router.get("/getUserPost/:authorId", postController.getPostbyAuthor);

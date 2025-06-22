@@ -1,4 +1,4 @@
-const User = require("./../models/userModel");
+const User = require("../models/userModel");
 const bcrypt = require("bcryptjs");
 const { promisify } = require("util");
 const jwt = require("jsonwebtoken");
@@ -42,6 +42,7 @@ exports.login = async (req, res) => {
     const token = generateToken({
       _id: user._id,
       employeeId: user.employeeId,
+      name: user.name,
     });
 
     res.cookie("authToken", token, {
@@ -68,8 +69,9 @@ exports.signUp = async (req, res) => {
   try {
     const newUser = await User.create(req.body);
     const token = generateToken({
-      userId: newUser._id,
+      _id: newUser._id,
       employeeId: newUser.employeeId,
+      name: newUser.name,
     });
     res.cookie("authToken", token, {
       httpOnly: true, // Prevents client-side JavaScript access
@@ -134,6 +136,7 @@ exports.protected = async (req, res, next) => {
     }
     //3. Check if user exists
     const currentUser = await User.findById(decoded._id);
+    console.log(currentUser);
     if (!currentUser) {
       return res.status(400).json({
         status: "failed",

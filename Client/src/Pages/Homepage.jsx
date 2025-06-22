@@ -1,32 +1,84 @@
-import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import {
-  fetchTopPosts,
-  searchPosts,
-  fetchDepartments,
-} from "../Redux/HomepageMAnagement/PostSlice";
-
+import { useEffect, useState } from "react";
 import "./Pagecss/Homepage.css";
 import { IoIosSearch } from "react-icons/io";
 
-const Homepage = () => {
-  const dispatch = useDispatch();
-  const { topPosts, searchResults, status, error, Departments } = useSelector(
-    (state) => state.posts
-  );
+import { Pagination } from "@mui/material";
+import SelectElement from "../ui/SelectElement.jsx";
+import ModalWindow from "../ui/ModalWindow.jsx";
+import PostSection from "../Components/PostSection.jsx";
+import CreatePostForm from "./../Components/CreatePostForm.jsx";
+import { useLocation, useSearchParams } from "react-router-dom";
+import axios from "axios";
+
+const departmentOptions = [
+  {
+    name: "All",
+    value: "all",
+  },
+  {
+    name: "HR",
+    value: "hr",
+  },
+  {
+    name: "Sales",
+    value: "sales",
+  },
+  {
+    name: "Marketing",
+    value: "marketing",
+  },
+];
+
+const filterOptions = [
+  { name: "Recent", value: "createdAt" },
+  {
+    name: "Popular",
+    value: "votes",
+  },
+];
+
+function Homepage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [posts, setPosts] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(parseInt(searchParams.get("page")) || 1);
+  const [sort, setSort] = useState("createdAt");
+  const [department, setDepartment] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [search, setSearch] = useState(false);
+  const queryString = useLocation().search;
 
   useEffect(() => {
-    dispatch(fetchTopPosts());
-    dispatch(fetchDepartments());
-  }, [dispatch, fetchDepartments]);
+    setPage(parseInt(searchParams.get("page") || 1));
+    setSort(searchParams.get("sort") || "createdAt");
+    setDepartment(searchParams.get("department") || "all");
+  }, [searchParams]);
 
-  const handleSearch = () => {
-    setSearch(true);
-    if (!searchQuery.trim()) return;
-    dispatch(searchPosts(searchQuery));
-  };
+  useEffect(() => {
+    async function fetchPosts() {
+      try {
+        setIsLoading(true);
+        const response = await axios.get(
+          `${import.meta.env.VITE_SERVER_URL}/api/post/getPosts${queryString}`,
+          {
+            withCredentials: true,
+          }
+        );
+        setPosts(response.data?.data || []);
+      } catch (error) {
+        setPosts([]);
+        console.log(error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchPosts();
+  }, [queryString]);
+
+  function handleParamsChange(newParam) {
+    const params = Object.fromEntries(searchParams.entries());
+    setSearchParams({ ...params, ...newParam });
+  }
 
   return (
     <div className="homepageBody">
@@ -46,52 +98,45 @@ const Homepage = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <IoIosSearch
-            style={{ fontSize: "1.5rem", cursor: "pointer" }}
-            onClick={handleSearch}
-          />
+          <IoIosSearch style={{ fontSize: "1.5rem", cursor: "pointer" }} />
         </div>
       </section>
 
       <section className="midSection">
-        <h1>Frequently Asked Questions</h1>
-        {status === "loading" ? (
-          <p>Loading...</p>
-        ) : status === "failed" ? (
-          <p>Error: {error}</p>
-        ) : (
-          <ul className="faqList">
-            {search
-              ? searchResults.map((q, index) => (
-                  <li key={index} className="faqItem">
-                    <h3>{q.Title}</h3>
-                    <p>{q.Description}</p>
-                  </li>
-                ))
-              : topPosts.map((q, index) => (
-                  <li key={index} className="faqItem">
-                    <h3>{q.Title}</h3>
-                    <p>{q.Description}</p>
-                  </li>
-                ))}
-          </ul>
-        )}
-      </section>
-
-      <section className="BottomSection">
-        <h2>Departments</h2>
-        <div className="departmentsContainer">
-          {["HR", "IT Support", "Finance", "Admin", "Operations"].map(
-            (dept, index) => (
-              <div key={index} className="departmentBox">
-                <p>{dept}</p>
-              </div>
-            )
-          )}
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <h1>Frequently Asked Questions</h1>
+            <SelectElement
+              label="Department"
+              value={department}
+              setValue={(e) => handleParamsChange({ department: e })}
+              options={departmentOptions}
+            />
+            <SelectElement
+              label="Filter"
+              value={sort}
+              setValue={(e) => handleParamsChange({ sort: e })}
+              options={filterOptions}
+            />
+          </div>
+          <div>
+            <ModalWindow text="Add New Post">
+              <CreatePostForm />
+            </ModalWindow>
+          </div>
         </div>
+        {isLoading ? <div>loading....</div> : <PostSection posts={posts} />}
       </section>
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <Pagination
+          count={10}
+          shape="rounded"
+          defaultPage={page}
+          onChange={(event, value) => handleParamsChange({ page: value })}
+        />
+      </div>
     </div>
   );
-};
+}
 
 export default Homepage;

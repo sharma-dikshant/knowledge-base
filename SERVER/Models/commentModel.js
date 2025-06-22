@@ -5,6 +5,7 @@ const commentSchema = mongoose.Schema(
     content: {
       type: String,
       required: [true, "comment content is required"],
+      lowercase: true,
     },
 
     author: {

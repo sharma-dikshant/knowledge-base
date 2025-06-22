@@ -2,7 +2,11 @@ const mongoose = require("mongoose");
 
 const postSchema = new mongoose.Schema(
   {
-    title: { type: String, required: [true, "post must have title"] },
+    title: {
+      type: String,
+      required: [true, "post must have title"],
+      lowercase: true,
+    },
     description: {
       type: String,
       required: [true, "post must have description"],
@@ -10,7 +14,7 @@ const postSchema = new mongoose.Schema(
     votes: { type: Number, default: 0 },
     upVotes: [{ type: mongoose.Schema.ObjectId, ref: "User" }],
     downVotes: [{ type: mongoose.Schema.ObjectId, ref: "User" }],
-    category: { type: String, required: true },
+    category: { type: String, required: true, lowercase: true },
     status: {
       //* pending, reviewed, verified
       type: String,
@@ -24,8 +28,8 @@ const postSchema = new mongoose.Schema(
       required: [true, "post must have author"],
     },
 
-    hashtags: [{ type: String }],
-    department: { type: String, required: true },
+    hashtags: [{ type: String, lowercase: true }],
+    department: { type: String, required: true, lowercase: true },
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );

@@ -2,13 +2,21 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const userSchema = new mongoose.Schema(
   {
-    name: { type: String, required: [true, "user must have name"] },
+    name: {
+      type: String,
+      required: [true, "user must have name"],
+      lowercase: true,
+    },
     employeeId: {
       type: Number,
       required: [true, "user must have employee Id"],
       unique: true,
     },
-    password: { type: String, required: [true, "password is required"] },
+    password: {
+      type: String,
+      required: [true, "password is required"],
+      select: false,
+    },
     role: {
       type: String,
       enum: ["user", "moderator", "admin"],
@@ -17,7 +25,7 @@ const userSchema = new mongoose.Schema(
     },
     email: { type: String, required: false },
     grade: { type: String, required: false },
-    department: { type: String, required: false }, //TODO if user is admin or moderator then only they should specify department
+    department: { type: String, required: false, lowercase: true }, //TODO if user is admin or moderator then only they should specify department
   },
   { timestamps: true }
 );

@@ -2,18 +2,29 @@ import React, { useState, useEffect } from "react";
 import "./Componentcss/mainbody.css";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { FaUserCircle } from "react-icons/fa";
-import { MdHome } from "react-icons/md";
-import { Link } from "react-router-dom";
+import { MdHome, MdLogin } from "react-icons/md";
+import { Link, Outlet } from "react-router-dom";
+import axios from "axios";
 
-const MainBody = ({ children }) => {
+const MainBody = () => {
+  const [user, setUser] = useState(null);
   const [showsidebar, setshowsidebar] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  console.log(user)
 
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
     };
 
+    async function getUser() {
+      const response = await axios.get(
+        `${import.meta.env.VITE_SERVER_URL}/api/user/getUser`,
+        { withCredentials: true }
+      );
+      setUser(response.data?.data || null);
+    }
+    getUser();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -27,7 +38,6 @@ const MainBody = ({ children }) => {
         <section className="section2">
           <h1>IOCL Knowledge Base</h1>
         </section>
-        <section></section>
       </nav>
 
       <div className="Body">
@@ -38,9 +48,15 @@ const MainBody = ({ children }) => {
                 <Link to="/" className="sidebarul">
                   <MdHome style={{ fontSize: "2rem" }} /> HomePage
                 </Link>
-                <Link to="/user" className="sidebarul">
-                  <FaUserCircle style={{ fontSize: "2rem" }} /> Userpage
-                </Link>
+                {user ? (
+                  <Link to="/user" className="sidebarul">
+                    <FaUserCircle style={{ fontSize: "2rem" }} /> Userpage
+                  </Link>
+                ) : (
+                  <Link className="sidebarul">
+                    <MdLogin style={{ fontSize: "2rem" }} /> Login
+                  </Link>
+                )}
               </div>
             </div>
           ) : (
@@ -49,7 +65,7 @@ const MainBody = ({ children }) => {
                 <Link to="/" className="sidebarul">
                   <MdHome />
                 </Link>
-                <Link to="/user" className="sidebarul">
+                <Link to='/user' className="sidebarul">
                   <FaUserCircle />
                 </Link>
               </div>
@@ -73,7 +89,7 @@ const MainBody = ({ children }) => {
             showsidebar && !isMobile ? "bodySection2" : "bodySectionnav2"
           }
         >
-          {children}
+          <Outlet context={user} />
         </div>
       </div>
 

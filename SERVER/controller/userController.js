@@ -1,5 +1,4 @@
 const User = require("../models/userModel");
-
 //TODO user controller
 //update user
 exports.updateUser = async (req, res) => {
@@ -62,5 +61,41 @@ exports.deleteUser = async (req, res) => {
     return res.status(201).json({ message: "user deleted successfully" });
   } catch (error) {
     return res.status(500).json({ message: "Internal server error", error });
+  }
+};
+
+exports.getUser = (req, res) => {
+  if (req.user) {
+    return res.status(200).json({
+      status: "success",
+      data: req.user,
+    });
+  }
+
+  return req.status(400).json({
+    status: "failed",
+    message: "No user Logged In",
+  });
+};
+
+exports.getUserDetails = async (req, res) => {
+  try {
+    const user = await User.findOne({ employeeId: req.params.employeeId });
+    if (!user) {
+      return res.status(400).json({
+        message: "no user found!",
+      });
+    }
+    res.status(200).json({
+      status: "success",
+      data: user,
+    });
+  } catch (error) {
+    console.log(error)
+    return res.status(400).json({
+      status: "failed",
+      message: error.message,
+      error,
+    });
   }
 };

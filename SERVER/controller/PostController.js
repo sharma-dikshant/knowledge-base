@@ -1,9 +1,8 @@
 const Post = require("../models/postModel");
-const Comment = require("./../models/commentModel");
+const Comment = require("../models/commentModel");
 
 exports.createPost = async (req, res) => {
   try {
-    console.log(req.body);
     // const newPost = await Post.create(req.body, { new: true });
     const newPost = await Post.create({ ...req.body, author: req.user._id });
 
@@ -60,6 +59,27 @@ exports.getPostbyAuthor = async (req, res) => {
   }
 };
 
+exports.getPostDetails = async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.postId).populate("author");
+    if (!post) {
+      return res.status(404).json({
+        message: "not Found",
+      });
+    }
+
+    const comments = await Comment.find({ post: req.params.postId });
+
+    return res.status(200).json({
+      post,
+      comments,
+    });
+  } catch (error) {}
+  return res.status(200).json({
+    message: "post data",
+  });
+};
+
 exports.getAllPosts = async (req, res) => {
   // sorting
   // pagination
@@ -67,9 +87,16 @@ exports.getAllPosts = async (req, res) => {
     let query = Post.find();
 
     /**
+     * if department is given
+     */
+
+    if (req.query.department && req.query.department != "all") {
+      query = query.find({ department: req.query.department });
+    }
+    /**
      * sorting
      * based of time of created => createdAt, -createdAt
-     * based of upVotes => upVotes, -upVotes
+     * based of votes => votes, -votes
      */
     if (req.query.sort) {
       const sortQ = req.query.sort.split(",").join(" ");
@@ -88,7 +115,9 @@ exports.getAllPosts = async (req, res) => {
     query = query.skip(skipped).limit(limit);
 
     // Fetch all posts in desired way from the database
-    const posts = await query.select("-__v -upVotes -downVotes");
+    const posts = await query
+      .select("-__v -upVotes -downVotes")
+      .populate("author");
 
     if (posts.length == 0) {
       return res.status(404).json({ message: "No posts found" });
@@ -276,8 +305,9 @@ exports.deleteComment = async (req, res) => {
 };
 exports.getAllPostComment = async (req, res) => {
   try {
-    console.log(req.params.postId);
-    const comments = await Comment.find({ post: req.params.postId });
+    const comments = await Comment.find({ post: req.params.postId }).populate(
+      "author"
+    );
 
     return res.status(200).json({
       status: "success",
