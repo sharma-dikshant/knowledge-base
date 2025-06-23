@@ -19,13 +19,13 @@ function generateToken(payload) {
 }
 
 exports.login = async (req, res) => {
+  console.log(req.body)
   try {
     const { employeeId, password, captchaInput } = req.body;
     if (!employeeId || !password) {
       return res.status(400).json({ message: "all fields required" });
     }
-    const user = await User.findOne({ employeeId: employeeId }).lean(); // lean method just return simple js object not Doc
-
+    const user = await User.findOne({ employeeId: employeeId }).select("password"); 
     if (!user) {
       return res
         .status(404)
@@ -57,6 +57,7 @@ exports.login = async (req, res) => {
       token,
     });
   } catch (error) {
+    console.log(error)
     res.status(400).json({
       status: "failed",
       message: `Login failed ${error.message}`,

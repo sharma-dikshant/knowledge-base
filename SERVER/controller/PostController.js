@@ -1,5 +1,6 @@
 const Post = require("../models/postModel");
 const Comment = require("../models/commentModel");
+const Solution = require("../models/solutionModal");
 
 exports.createPost = async (req, res) => {
   try {
@@ -68,11 +69,17 @@ exports.getPostDetails = async (req, res) => {
       });
     }
 
-    const comments = await Comment.find({ post: req.params.postId });
+    const comments = await Comment.find({ post: req.params.postId })
+      .sort("-createdAt")
+      .limit(10);
+    const solutions = await Solution.find({ post: req.params.postId })
+      .sort("-createdAt")
+      .limit(1);
 
     return res.status(200).json({
       post,
       comments,
+      solutions,
     });
   } catch (error) {}
   return res.status(200).json({
@@ -159,6 +166,7 @@ exports.upVote = async (req, res) => {
     const userId = req.user._id;
     //1 check if user already upvoted
     let post = await Post.findById(postId);
+    console.log(post);
     if (!post || !userId) {
       return res.status(400).json({
         status: "failed",
@@ -169,7 +177,13 @@ exports.upVote = async (req, res) => {
     post.downVotes = post.downVotes.filter((uid) => uid.toString() !== userId);
 
     //3 add to upVote if not Present
-    if (!post.upVotes.some((uid) => uid.toString() === userId)) {
+    if (
+      !post.upVotes.some((uid) => {
+        console.log(uid, userId);
+        return uid.toString() == userId;
+      })
+    ) {
+      console.log("trueee")
       post.upVotes.push(userId);
       post.votes += 1;
     }

@@ -7,6 +7,7 @@ const cookieParser = require("cookie-parser");
 const userRoutes = require("./routers/userRouter");
 const authRoutes = require("./routers/authRouter");
 const PostRoutes = require("./routers/postRouter");
+const solutionRoutes = require("./routers/solutionRouter");
 
 const app = express();
 
@@ -19,11 +20,22 @@ app.use(cors({ origin: "http://localhost:5173", credentials: true })); // Allow 
 app.use("/api/user", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/post", PostRoutes);
+app.use("/api/solution", solutionRoutes);
 
 app.use("/", (req, res) => {
   res.status(200).json({
     status: "success",
     data: "Welcome to knowledge base",
+  });
+});
+
+app.use((err, req, res, next) => {
+  console.log(err.message);
+  const code = err.code || 500;
+  const message = err.message || "internal server error";
+  return res.status(code).json({
+    status: "failed",
+    message,
   });
 });
 

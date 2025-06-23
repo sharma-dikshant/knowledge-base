@@ -7,7 +7,11 @@ import SelectElement from "../ui/SelectElement.jsx";
 import ModalWindow from "../ui/ModalWindow.jsx";
 import PostSection from "../Components/PostSection.jsx";
 import CreatePostForm from "./../Components/CreatePostForm.jsx";
-import { useLocation, useSearchParams } from "react-router-dom";
+import {
+  useLocation,
+  useOutletContext,
+  useSearchParams,
+} from "react-router-dom";
 import axios from "axios";
 
 const departmentOptions = [
@@ -39,10 +43,11 @@ const filterOptions = [
 
 function Homepage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const user = useOutletContext();
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(parseInt(searchParams.get("page")) || 1);
-  const [sort, setSort] = useState("createdAt");
+  const [sort, setSort] = useState("-createdAt");
   const [department, setDepartment] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const queryString = useLocation().search;
@@ -119,11 +124,13 @@ function Homepage() {
               options={filterOptions}
             />
           </div>
-          <div>
-            <ModalWindow text="Add New Post">
-              <CreatePostForm />
-            </ModalWindow>
-          </div>
+          {user && (
+            <div>
+              <ModalWindow text="Add New Post">
+                <CreatePostForm />
+              </ModalWindow>
+            </div>
+          )}
         </div>
         {isLoading ? <div>loading....</div> : <PostSection posts={posts} />}
       </section>

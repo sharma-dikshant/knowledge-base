@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema(
     },
     email: { type: String, required: false },
     grade: { type: String, required: false },
-    department: { type: String, required: false, lowercase: true }, //TODO if user is admin or moderator then only they should specify department
+    department: { type: String, required: true, lowercase: true },
   },
   { timestamps: true }
 );

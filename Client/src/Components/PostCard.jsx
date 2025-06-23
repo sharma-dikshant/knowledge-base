@@ -41,6 +41,7 @@ function PostCard({ post }) {
     }
     getComments();
   }, [postId]);
+  
 
   async function handleVote(type) {
     try {

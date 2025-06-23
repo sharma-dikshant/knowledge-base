@@ -9,9 +9,12 @@ import AuthPage from "./Pages/AuthPage";
 import { Toaster } from "react-hot-toast";
 import PostPage from "./Pages/PostPage";
 
+import loadUser from "./utils/userLoader";
+
 const router = createBrowserRouter([
   {
     element: <MainBody />,
+    loader: loadUser,
     children: [
       {
         path: "/",
