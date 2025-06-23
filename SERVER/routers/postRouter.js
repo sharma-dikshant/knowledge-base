@@ -12,7 +12,7 @@ router.get("/getUserPost/:authorId", postController.getPostbyAuthor);
 router.get("/getVotes/:postId", postController.getVotes);
 router.get("/getAllComment/:postId", postController.getAllPostComment);
 router.get("/search", postController.searchPosts);
-router.get("/filterByDepartment", postController.filterPostsByDepartment);
+// router.get("/filterByDepartment", postController.filterPostsByDepartment);
 
 router.use(authController.protected);
 router.post("/createPost", postController.createPost);

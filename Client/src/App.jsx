@@ -9,12 +9,12 @@ import AuthPage from "./Pages/AuthPage";
 import { Toaster } from "react-hot-toast";
 import PostPage from "./Pages/PostPage";
 
-import loadUser from "./utils/userLoader";
+import loader from "./utils/userLoader";
 
 const router = createBrowserRouter([
   {
     element: <MainBody />,
-    loader: loadUser,
+    loader: loader.loadUser,
     children: [
       {
         path: "/",
@@ -32,6 +32,7 @@ const router = createBrowserRouter([
       {
         path: "/post/:id",
         element: <PostPage />,
+        loader: loader.loadPostDetails,
       },
       {
         path: "/admin",

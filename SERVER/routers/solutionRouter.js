@@ -5,7 +5,10 @@ const router = express.Router();
 
 router.get("/:solutionId", solutionController.getSolution);
 
-router.use(authController.protected);
+router.use(
+  authController.protected,
+  authController.restrictTo("admin", "moderator")
+);
 router.post("/:postId", solutionController.createSolution);
 router.patch("/:solutionId", solutionController.updateSolution);
 router.delete("/:solutionId", solutionController.deleteSolution);

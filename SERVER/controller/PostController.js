@@ -122,9 +122,7 @@ exports.getAllPosts = async (req, res) => {
     query = query.skip(skipped).limit(limit);
 
     // Fetch all posts in desired way from the database
-    const posts = await query
-      .select("-__v -upVotes -downVotes")
-      .populate("author");
+    const posts = await query.select("-__v").populate("author");
 
     if (posts.length == 0) {
       return res.status(404).json({ message: "No posts found" });
@@ -166,7 +164,6 @@ exports.upVote = async (req, res) => {
     const userId = req.user._id;
     //1 check if user already upvoted
     let post = await Post.findById(postId);
-    console.log(post);
     if (!post || !userId) {
       return res.status(400).json({
         status: "failed",
@@ -174,16 +171,12 @@ exports.upVote = async (req, res) => {
       });
     }
     //2 remove from downVote if presen
-    post.downVotes = post.downVotes.filter((uid) => uid.toString() !== userId);
+    post.downVotes = post.downVotes.filter(
+      (uid) => uid.toString() !== userId.toString()
+    );
 
     //3 add to upVote if not Present
-    if (
-      !post.upVotes.some((uid) => {
-        console.log(uid, userId);
-        return uid.toString() == userId;
-      })
-    ) {
-      console.log("trueee")
+    if (!post.upVotes.some((uid) => uid.toString() === userId.toString())) {
       post.upVotes.push(userId);
       post.votes += 1;
     }
@@ -203,7 +196,7 @@ exports.upVote = async (req, res) => {
   }
 };
 
-//DownPost
+//Downvote
 
 exports.downVote = async (req, res) => {
   try {
@@ -219,13 +212,12 @@ exports.downVote = async (req, res) => {
         });
       }
       //2 remove from upVotes if presen
-      post.upVotes = post.upVotes.filter((uid) => uid.toString() !== userId);
+      post.upVotes = post.upVotes.filter(
+        (uid) => uid.toString() !== userId.toString()
+      );
 
       //3 add to downVote is not Present
-      if (
-        !post.downVotes.some((uid) => uid.toString() === userId) &&
-        post.votes > 0
-      ) {
+      if (!post.downVotes.some((uid) => uid == userId) && post.votes > 0) {
         post.votes -= 1;
         post.downVotes.push(userId);
       }

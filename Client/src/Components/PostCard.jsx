@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useOutletContext, Link as RouterLink } from "react-router-dom";
+import axios from "axios";
 import {
   Paper,
   Button,
@@ -16,8 +18,9 @@ import {
   BiSolidDownvote,
   BiDownvote,
 } from "react-icons/bi";
-import { useOutletContext, Link as RouterLink } from "react-router-dom";
-import axios from "axios";
+
+import ModalWindow from "./../ui/ModalWindow";
+import CreateSolutionForm from "./CreateSolutionForm";
 
 function PostCard({ post }) {
   const user = useOutletContext();
@@ -27,6 +30,14 @@ function PostCard({ post }) {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const postId = post._id;
+  useEffect(() => {
+    if (post.upVotes.some((uid) => user._id === uid)) {
+      setUpVoted(true);
+    }
+    if (post.downVotes.some((uid) => user._id === uid)) {
+      setDownVoted(true);
+    }
+  }, [post, user]);
 
   useEffect(() => {
     async function getComments() {
@@ -41,7 +52,6 @@ function PostCard({ post }) {
     }
     getComments();
   }, [postId]);
-  
 
   async function handleVote(type) {
     try {
@@ -92,8 +102,6 @@ function PostCard({ post }) {
       <Box display="flex" flexDirection="column">
         <Typography
           variant="h6"
-          component={RouterLink}
-          to={`/post/${post._id}`}
           sx={{
             textAlign: "left",
             textDecoration: "none",
@@ -101,10 +109,16 @@ function PostCard({ post }) {
             "&:hover": { textDecoration: "underline" },
           }}
         >
-          {post.title}
+          <a href={`/post/${post._id}`}>{post.title}</a>
         </Typography>
 
-        <Box mt={1} display="flex" flexWrap="wrap" gap={1}>
+        <Box
+          mt={1}
+          display="flex"
+          flexWrap="wrap"
+          gap={1}
+          sx={{ alignItems: "center" }}
+        >
           <Chip label={`Status: ${post.status}`} size="small" color="warning" />
           <Chip
             label={`Category: ${post.category}`}
@@ -120,6 +134,9 @@ function PostCard({ post }) {
             }`}
             size="small"
           />
+          {user && (user.role === "admin" || user.role === "moderator") && (
+            <a href={`/post/${postId}`}>Add Solution</a>
+          )}
         </Box>
       </Box>
 

@@ -13,4 +13,16 @@ async function loadUser() {
   }
 }
 
-export default loadUser;
+async function loadPostDetails() {
+  const postId = window.location.pathname.split("/")[2];
+  try {
+    const response = await axios.get(
+      `${import.meta.env.VITE_SERVER_URL}/api/post/details/${postId}`
+    );
+    return response.data;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+export default { loadUser, loadPostDetails };
