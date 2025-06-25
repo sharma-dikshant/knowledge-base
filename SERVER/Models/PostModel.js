@@ -14,13 +14,22 @@ const postSchema = new mongoose.Schema(
     votes: { type: Number, default: 0 },
     upVotes: [{ type: mongoose.Schema.ObjectId, ref: "User" }],
     downVotes: [{ type: mongoose.Schema.ObjectId, ref: "User" }],
-    category: { type: String, required: true, lowercase: true },
+    category: {
+      type: String,
+      required: [true, "category is required to post"],
+      lowercase: true,
+    },
     status: {
       //* pending, reviewed, verified
       type: String,
       required: [true, "post must have valid status"],
       enum: ["pending", "reviewed", "verified"],
       default: "pending",
+    },
+    private: {
+      type: Boolean,
+      default: true,
+      required: true,
     },
     author: {
       type: mongoose.Schema.ObjectId,
@@ -29,26 +38,16 @@ const postSchema = new mongoose.Schema(
     },
 
     hashtags: [{ type: String, lowercase: true }],
-    department: { type: String, required: true, lowercase: true },
+    department: {
+      type: String,
+      required: [true, "post must belong to a department"],
+      lowercase: true,
+    },
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
-// setting virtual properties for upVoteCount and downVoteCount
-// postSchema.virtual("upVoteCount").get(function () {
-//   return this.upVotes?.length || 0;
-// });
-// postSchema.virtual("downVoteCount").get(function () {
-//   return this.downVotes?.length || 0;
-// });
 
 const Post = mongoose.model("Post", postSchema);
 module.exports = Post;
 
-//TODO post history is still not implemented
-// postHistory: [
-//   {
-//     solutions: { type: String, required: true },
-//     createdAt: { type: Date },
-//   },
-// ],

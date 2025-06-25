@@ -1,29 +1,29 @@
 const Department = require("../models/departmentModel");
 
+exports.getAllDepartments = async (req, res, next) => {
+  try {
+    const docs = await Department.find({}).select("name departmentId");
+    return res.status(200).json({
+      departments: docs,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      message: error.message,
+      error,
+    });
+  }
+};
+
 exports.createDepartment = async (req, res) => {
   try {
-    const { department, departmentid } = req.body;
-    if (!department || !departmentid) {
-      return res.status(400).json({ message: "all parameter required" });
-    }
-    console.log(departmentid);
-    const DepartmentExist = await Department.find({
-      Departmentid: departmentid,
-    });
-    console.log(DepartmentExist.length > 0);
-    if (DepartmentExist.length > 0) {
-      return res.status(400).json({ message: "department already exist" });
-    }
-    const DepartmentData = new Department({
-      Department: department,
-      Departmentid: departmentid,
-    });
+    const newDoc = await Department.create(req.body);
 
-    await DepartmentData.save();
-    return res.status(201).json({ message: "Department created successfully" });
+    return res.status(200).json({
+      message: "department created successfully",
+      data: newDoc,
+    });
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ message: "internal server error", error });
+    return res.status(400).json({ message: error.message, error });
   }
 };
 

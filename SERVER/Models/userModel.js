@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema(
     grade: { type: String, required: false },
     department: { type: String, required: true, lowercase: true },
   },
-  { timestamps: true }
+  { timestamps: true, select: false }
 );
 
 // pre -middlewares

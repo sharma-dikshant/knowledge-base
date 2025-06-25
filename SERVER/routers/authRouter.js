@@ -1,7 +1,8 @@
 const express = require("express");
-const authController = require("../controller/authController");
-const loginLimiter = require("../Middleware/LoginAttemptMiddleware");
+const authController    = require("../controller/authController");
+const loginLimiter      = require("../Middleware/LoginAttemptMiddleware");
 const sessionMiddleware = require("../Middleware/MiddlewareCaptcha");
+
 router = express.Router();
 
 router.get("/captcha", sessionMiddleware, authController.getCaptcha);

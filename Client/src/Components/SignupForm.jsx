@@ -1,13 +1,42 @@
-import { useState } from "react";
-import { Box, Button, TextField, Typography, Paper, Link } from "@mui/material";
+import { useState, useEffect } from "react";
+import axios from "axios";
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Paper,
+  Link,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+} from "@mui/material";
 
 function SignupForm({ onSignup, setAuthMethod }) {
+  const [allowedDepartments, setAllowedDepartments] = useState([]);
   const [form, setForm] = useState({
     name: "",
     employeeId: "",
+    department: "",
     password: "",
     confirmPassword: "",
   });
+
+  useEffect(() => {
+    async function getDepartment() {
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_SERVER_URL}/api/department/all`
+        );
+        setAllowedDepartments(response.data.departments);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    getDepartment();
+  }, []);
 
   function handleChange(e) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -19,12 +48,21 @@ function SignupForm({ onSignup, setAuthMethod }) {
       alert("Passwords do not match");
       return;
     }
+
     onSignup({
       name: form.name,
       employeeId: form.employeeId,
       password: form.password,
-    }); // Optional callback
-    setForm({ name: "", employeeId: "", password: "", confirmPassword: "" });
+      department: form.department,
+    });
+
+    setForm({
+      name: "",
+      employeeId: "",
+      department: "",
+      password: "",
+      confirmPassword: "",
+    });
   }
 
   return (
@@ -52,16 +90,35 @@ function SignupForm({ onSignup, setAuthMethod }) {
           onChange={handleChange}
           required
         />
+
         <TextField
           fullWidth
-          label="employeeId"
+          label="Employee ID"
           name="employeeId"
-          type="text"
           margin="normal"
           value={form.employeeId}
           onChange={handleChange}
           required
         />
+
+        <FormControl fullWidth margin="normal" required>
+          <InputLabel id="department-label">Department</InputLabel>
+          <Select
+            labelId="department-label"
+            id="department"
+            name="department"
+            value={form.department}
+            label="Department"
+            onChange={handleChange}
+          >
+            {allowedDepartments?.map((dept, i) => (
+              <MenuItem key={i} value={dept.name}>
+                {dept.name} ({dept.departmentId})
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
         <TextField
           fullWidth
           label="Password"
@@ -72,6 +129,7 @@ function SignupForm({ onSignup, setAuthMethod }) {
           onChange={handleChange}
           required
         />
+
         <TextField
           fullWidth
           label="Confirm Password"
@@ -82,6 +140,7 @@ function SignupForm({ onSignup, setAuthMethod }) {
           onChange={handleChange}
           required
         />
+
         <Button fullWidth variant="contained" type="submit" sx={{ mt: 2 }}>
           Sign Up
         </Button>

@@ -1,8 +1,10 @@
-const User = require("../models/userModel");
-const bcrypt = require("bcryptjs");
 const { promisify } = require("util");
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
+const User = require("../models/userModel");
+const Department = require("../models/departmentModel");
+const AppError = require("../utils/AppError");
+const catchAsync = require("../utils/catchAsync");
 const { generateCaptcha } = require("../Captcha/Captcha");
 
 exports.getCaptcha = (req, res) => {
@@ -18,82 +20,70 @@ function generateToken(payload) {
   return token;
 }
 
-exports.login = async (req, res) => {
-  console.log(req.body)
-  try {
-    const { employeeId, password, captchaInput } = req.body;
-    if (!employeeId || !password) {
-      return res.status(400).json({ message: "all fields required" });
-    }
-    const user = await User.findOne({ employeeId: employeeId }).select("password"); 
-    if (!user) {
-      return res
-        .status(404)
-        .json({ message: "No user found with given employeeId" });
-    }
-
-    const isPasswordCorrect = await bcrypt.compare(password, user.password);
-    if (!isPasswordCorrect) {
-      return res.status(401).json({ message: "Incorrect Password" });
-    }
-
-    //TODO captcha verification
-
-    const token = generateToken({
-      _id: user._id,
-      employeeId: user.employeeId,
-      name: user.name,
-    });
-
-    res.cookie("authToken", token, {
-      httpOnly: true, // Prevents client-side JavaScript access
-      secure: process.env.NODE_ENV === "production", // Secure only in production
-      sameSite: "Strict", // Prevents CSRF attacks
-      maxAge: 90 * 24 * 60 * 60 * 1000, // 90 day expiration
-    });
-
-    res.json({
-      message: "login sucessfully",
-      token,
-    });
-  } catch (error) {
-    console.log(error)
-    res.status(400).json({
-      status: "failed",
-      message: `Login failed ${error.message}`,
-      error,
-    });
+exports.login = catchAsync(async (req, res, next) => {
+  const { employeeId, password, captchaInput } = req.body;
+  if (!employeeId || !password) {
+    return next(new AppError("all fields required"));
   }
-};
-
-exports.signUp = async (req, res) => {
-  try {
-    const newUser = await User.create(req.body);
-    const token = generateToken({
-      _id: newUser._id,
-      employeeId: newUser.employeeId,
-      name: newUser.name,
-    });
-    res.cookie("authToken", token, {
-      httpOnly: true, // Prevents client-side JavaScript access
-      secure: process.env.NODE_ENV === "production", // Secure only in production
-      sameSite: "Strict", // Prevents CSRF attacks
-      maxAge: 90 * 24 * 60 * 60 * 1000, // 90 day expiration
-    });
-    return res.status(200).json({
-      status: "success",
-      token,
-    });
-  } catch (error) {
-    return res.status(400).json({
-      status: "failed",
-      message: error.message,
-      error,
-    });
+  const user = await User.findOne({ employeeId: employeeId }).select(
+    "password"
+  );
+  if (!user) {
+    return next(new AppError("No user found with given employeeId", 404));
   }
-};
 
-exports.logout = async (req, res) => {
+  const isPasswordCorrect = await bcrypt.compare(password, user.password);
+  if (!isPasswordCorrect) {
+    return next(new AppError("Incorrect Password", 400));
+  }
+
+  //TODO captcha verification
+
+  const token = generateToken({
+    _id: user._id,
+    employeeId: user.employeeId,
+    name: user.name,
+  });
+
+  res.cookie("authToken", token, {
+    httpOnly: true, // Prevents client-side JavaScript access
+    secure: process.env.NODE_ENV === "production", // Secure only in production
+    sameSite: "Strict", // Prevents CSRF attacks
+    maxAge: 90 * 24 * 60 * 60 * 1000, // 90 day expiration
+  });
+
+  res.json({
+    message: "login sucessfully",
+    token,
+  });
+});
+
+exports.signUp = catchAsync(async (req, res, next) => {
+  // check the department whether it exists or not
+  const department = await Department.findOne({ name: req.body.department });
+  if (!department) {
+    return next(new AppError("given department does not exit!", 400));
+  }
+
+  const newUser = await User.create(req.body);
+  const token = generateToken({
+    _id: newUser._id,
+    employeeId: newUser.employeeId,
+    name: newUser.name,
+  });
+  res.cookie("authToken", token, {
+    httpOnly: true, // Prevents client-side JavaScript access
+    secure: process.env.NODE_ENV === "production", // Secure only in production
+    sameSite: "Strict", // Prevents CSRF attacks
+    maxAge: 90 * 24 * 60 * 60 * 1000, // 90 day expiration
+  });
+  return res.status(200).json({
+    status: "success",
+    token,
+  });
+});
+
+exports.logout = (req, res) => {
   res.cookie("authToken", "invalid", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -137,7 +127,6 @@ exports.protected = async (req, res, next) => {
     }
     //3. Check if user exists
     const currentUser = await User.findById(decoded._id);
-    console.log(currentUser);
     if (!currentUser) {
       return res.status(400).json({
         status: "failed",
@@ -160,12 +149,36 @@ exports.protected = async (req, res, next) => {
 exports.restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
-        status: "failed",
-        message: "you're not allowed to access this service",
-      });
+      return next(
+        new AppError("you're not allowed to access this service", 401)
+      );
     }
     //permission granted
     next();
   };
 };
+
+exports.optionalAuth = catchAsync(async (req, res, next) => {
+  let token = "";
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.split(" ")[0] === "Bearer"
+  ) {
+    token = rq.headers.authorization.split(" ")[1];
+  } else if (req.cookies.authToken) {
+    token = req.cookies.authToken;
+  }
+
+  if (!token) {
+    return next();
+  }
+
+  const decoded = await promisify(jwt.verify)(token, process.env.secretKey);
+  const user = await User.findById(decoded._id);
+
+  if (user) {
+    req.user = user;
+  }
+
+  return next();
+});

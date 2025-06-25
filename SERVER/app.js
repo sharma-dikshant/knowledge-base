@@ -8,6 +8,7 @@ const userRoutes = require("./routers/userRouter");
 const authRoutes = require("./routers/authRouter");
 const PostRoutes = require("./routers/postRouter");
 const solutionRoutes = require("./routers/solutionRouter");
+const departmentRoutes = require("./routers/departmentRouter");
 
 const app = express();
 
@@ -21,11 +22,18 @@ app.use("/api/user", userRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/post", PostRoutes);
 app.use("/api/solution", solutionRoutes);
+app.use("/api/department", departmentRoutes);
 
 app.use("/", (req, res) => {
   res.status(200).json({
     status: "success",
     data: "Welcome to knowledge base",
+  });
+});
+
+app.use("*", (req, res) => {
+  res.status(404).json({
+    message: "page not found!",
   });
 });
 

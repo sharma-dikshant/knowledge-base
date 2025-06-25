@@ -13,57 +13,65 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import axios from "axios";
-
-const departmentOptions = [
-  {
-    name: "All",
-    value: "all",
-  },
-  {
-    name: "HR",
-    value: "hr",
-  },
-  {
-    name: "Sales",
-    value: "sales",
-  },
-  {
-    name: "Marketing",
-    value: "marketing",
-  },
-];
+import toast from "react-hot-toast";
 
 const filterOptions = [
   { name: "Recent", value: "-createdAt" },
-  {
-    name: "Popular",
-    value: "-votes",
-  },
+  { name: "Popular", value: "-votes" },
 ];
 
 function Homepage() {
+  const [departmentOptions, setDepartmentOptions] = useState([]);
   const [searchParams, setSearchParams] = useSearchParams();
   const user = useOutletContext();
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [page, setPage] = useState(parseInt(searchParams.get("page")) || 1);
-  const [sort, setSort] = useState("-createdAt");
-  const [department, setDepartment] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const queryString = useLocation().search;
+  const [sort, setSort] = useState(searchParams.get("sort") || "-createdAt");
+  const [department, setDepartment] = useState(
+    searchParams.get("department") || "all"
+  );
+  const [searchQuery, setSearchQuery] = useState(
+    searchParams.get("search") || ""
+  );
+
+  useEffect(() => {
+    async function fetchDepartments() {
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_SERVER_URL}/api/department/all`
+        );
+        const d = response.data.departments.map((dept) => ({
+          name: dept.name,
+          value: dept.name,
+        }));
+        setDepartmentOptions([{ name: "All", value: "all" }, ...d]);
+      } catch (error) {
+        console.log(error);
+        toast.error("Failed to fetch department");
+      }
+    }
+    fetchDepartments();
+  }, []);
 
   useEffect(() => {
     setPage(parseInt(searchParams.get("page") || 1));
-    setSort(searchParams.get("sort") || "createdAt");
+    setSort(searchParams.get("sort") || "-createdAt");
     setDepartment(searchParams.get("department") || "all");
+    setSearchQuery(searchParams.get("search") || "");
   }, [searchParams]);
 
   useEffect(() => {
     async function fetchPosts() {
       try {
         setIsLoading(true);
+        const urlParams = new URLSearchParams(searchParams.toString());
+        urlParams.set("comments", 5);
+
         const response = await axios.get(
-          `${import.meta.env.VITE_SERVER_URL}/api/post/getPosts${queryString}`,
+          `${
+            import.meta.env.VITE_SERVER_URL
+          }/api/post/getPosts?${urlParams.toString()}`,
           {
             withCredentials: true,
           }
@@ -72,17 +80,17 @@ function Homepage() {
       } catch (error) {
         setPosts([]);
         console.log(error);
+        toast.error("Failed to fetch posts");
       } finally {
         setIsLoading(false);
       }
     }
-
     fetchPosts();
-  }, [queryString]);
+  }, [searchParams]);
 
-  function handleParamsChange(newParam) {
+  function handleParamsChange(newParams) {
     const params = Object.fromEntries(searchParams.entries());
-    setSearchParams({ ...params, ...newParam });
+    setSearchParams({ ...params, ...newParams, page: 1 });
   }
 
   return (
@@ -103,7 +111,10 @@ function Homepage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <IoIosSearch style={{ fontSize: "1.5rem", cursor: "pointer" }} />
+          <IoIosSearch
+            style={{ fontSize: "1.5rem", cursor: "pointer" }}
+            onClick={() => handleParamsChange({ search: searchQuery })}
+          />
         </div>
       </section>
 
@@ -114,13 +125,13 @@ function Homepage() {
             <SelectElement
               label="Department"
               value={department}
-              setValue={(e) => handleParamsChange({ department: e })}
+              setValue={(val) => handleParamsChange({ department: val })}
               options={departmentOptions}
             />
             <SelectElement
               label="Filter"
               value={sort}
-              setValue={(e) => handleParamsChange({ sort: e })}
+              setValue={(val) => handleParamsChange({ sort: val })}
               options={filterOptions}
             />
           </div>
@@ -132,13 +143,14 @@ function Homepage() {
             </div>
           )}
         </div>
-        {isLoading ? <div>loading....</div> : <PostSection posts={posts} />}
+        {isLoading ? <div>Loading...</div> : <PostSection posts={posts} />}
       </section>
+
       <div style={{ display: "flex", justifyContent: "center" }}>
         <Pagination
-          count={10}
+          count={10} // Ideally should come from backend
           shape="rounded"
-          defaultPage={page}
+          page={page}
           onChange={(event, value) => handleParamsChange({ page: value })}
         />
       </div>

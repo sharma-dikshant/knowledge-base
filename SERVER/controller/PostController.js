@@ -1,359 +1,258 @@
 const Post = require("../models/postModel");
 const Comment = require("../models/commentModel");
 const Solution = require("../models/solutionModal");
+const catchAsync = require("../utils/catchAsync");
+const AppError = require("../utils/AppError");
 
-exports.createPost = async (req, res) => {
-  try {
-    // const newPost = await Post.create(req.body, { new: true });
-    const newPost = await Post.create({ ...req.body, author: req.user._id });
-
-    return res.status(200).json({
-      status: "success",
-      data: newPost,
-    });
-  } catch (error) {
-    return res.status(400).json({
-      status: "failed",
-      message: error.message,
-      error,
-    });
-  }
-};
-
-exports.updatePost = async (req, res) => {
-  try {
-    const newPost = await Post.findByIdAndUpdate(req.params.postId, req.body, {
-      new: true,
-    });
-    if (!newPost) {
-      return res.status(400).json({
-        status: "failed",
-        message: "no post found with given id",
-      });
+const applyDepartmentalFilter = (req) => {
+  let departmentfilter;
+  if (req.user) {
+    // if user is logged in then we can show the private post of its department
+    // query = query.$
+    if (req.user.role === "admin") {
+      departmentfilter = { $or: [{ private: false }, { private: true }] };
+    } else {
+      departmentfilter = {
+        $or: [
+          { private: false },
+          { private: true, department: req.user.department },
+        ],
+      };
     }
-    return res.status(200).json({
-      status: "success",
-      data: newPost,
-    });
-  } catch (error) {
-    return res.status(400).json({
-      status: "failed",
-      message: error.mesage,
-      error,
-    });
+  } else {
+    departmentfilter = { private: false };
   }
+  return departmentfilter;
 };
 
-exports.getPostbyAuthor = async (req, res) => {
-  try {
-    const posts = await Post.find({ author: req.params.authorId });
-    return res.status(200).json({
-      status: "success",
-      posts,
-    });
-  } catch (error) {
-    return res.status(400).json({
-      status: "failed",
-      message: error.mesage,
-      error,
-    });
-  }
-};
-
-exports.getPostDetails = async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.postId).populate("author");
-    if (!post) {
-      return res.status(404).json({
-        message: "not Found",
-      });
-    }
-
-    const comments = await Comment.find({ post: req.params.postId })
-      .sort("-createdAt")
-      .limit(10);
-    const solutions = await Solution.find({ post: req.params.postId })
-      .sort("-createdAt")
-      .limit(1);
-
-    return res.status(200).json({
-      post,
-      comments,
-      solutions,
-    });
-  } catch (error) {}
+exports.createPost = catchAsync(async (req, res, next) => {
+  const newPost = await Post.create({ ...req.body, author: req.user._id });
   return res.status(200).json({
-    message: "post data",
+    message: "post created successfully!",
+    data: newPost,
+  });
+});
+
+exports.updatePost = async (req, res, next) => {
+  const newPost = await Post.findByIdAndUpdate(req.params.postId, req.body, {
+    new: true,
+  });
+  if (!newPost) {
+    return next(new AppError("no post found with given id", 404));
+  }
+  return res.status(200).json({
+    message: "post updated successfully",
+    data: newPost,
   });
 };
 
-exports.getAllPosts = async (req, res) => {
+exports.getPostbyAuthor = catchAsync(async (req, res, next) => {
+  const posts = await Post.find({
+    ...applyDepartmentalFilter(req),
+    author: req.params.authorId,
+  });
+  return res.status(200).json({
+    message: "success",
+    posts,
+  });
+});
+
+exports.getPostDetails = async (req, res, next) => {
+  const post = await Post.findOne({
+    ...applyDepartmentalFilter(req),
+    _id: req.params.postId,
+  }).populate("author");
+  if (!post) {
+    return next(new AppError("not Found", 404));
+  }
+  const commentsLimit = parseInt(req.query.comments) || 10;
+  const solutionLimit = parseInt(req.query.solutions) || 1;
+  const comments = await Comment.find({ post: req.params.postId })
+    .sort("-createdAt")
+    .limit(commentsLimit);
+  const solutions = await Solution.find({ post: req.params.postId })
+    .sort("-createdAt")
+    .limit(solutionLimit);
+
+  return res.status(200).json({
+    message: "success",
+    post,
+    comments,
+    solutions,
+  });
+};
+
+exports.getAllPosts = catchAsync(async (req, res, next) => {
   // sorting
   // pagination
-  try {
-    let query = Post.find();
+  //apply departmental filter
+  let query = Post.find(applyDepartmentalFilter(req));
 
-    /**
-     * if department is given
-     */
+  // console.log(departmentfilter);
+  /**
+   * if department is given
+   */
 
-    if (req.query.department && req.query.department != "all") {
-      query = query.find({ department: req.query.department });
-    }
-    /**
-     * sorting
-     * based of time of created => createdAt, -createdAt
-     * based of votes => votes, -votes
-     */
-    if (req.query.sort) {
-      const sortQ = req.query.sort.split(",").join(" ");
-      query = query.sort(sortQ);
-    }
-
-    /**
-     * Pagination
-     * page => page no
-     * limit => no. of results
-     */
-
-    const page = req.query.page || 1;
-    const limit = req.query.limit || 10;
-    const skipped = (page - 1) * limit;
-    query = query.skip(skipped).limit(limit);
-
-    // Fetch all posts in desired way from the database
-    const posts = await query.select("-__v").populate("author");
-
-    if (posts.length == 0) {
-      return res.status(404).json({ message: "No posts found" });
-    }
-
-    return res
-      .status(200)
-      .json({ message: "Post fetched sucessfully", data: posts });
-  } catch (error) {
-    console.error("Error fetching posts:", error);
-    return res.status(500).json({ message: "Internal server error" });
+  if (req.query.department && req.query.department != "all") {
+    query = query.find({ department: req.query.department });
   }
-};
+  /**
+   * sorting
+   * based of time of created => createdAt, -createdAt
+   * based of votes => votes, -votes
+   */
+  if (req.query.sort) {
+    const sortQ = req.query.sort.split(",").join(" ");
+    query = query.sort(sortQ);
+  }
+
+  /**
+   * Pagination
+   * page => page no
+   * limit => no. of results
+   */
+
+  const page = req.query.page || 1;
+  const limit = req.query.limit || 10;
+  const skipped = (page - 1) * limit;
+  query = query.skip(skipped).limit(limit);
+
+  // Fetch all posts in desired way from the database
+  let posts = await query.select("-__v").populate("author", "name employeeId");
+  if (posts.length == 0) {
+    return next(new AppError("No posts found", 400));
+  }
+
+  if (req.query.comments) {
+    const limit = parseInt(req.query.comments) || 5;
+    posts = await Promise.all(
+      posts.map(async (post) => {
+        const comments = await Comment.find({ post: post._id })
+          .sort("-createdAt")
+          .limit(limit)
+          .populate("author", "name employeeId")
+          .select("-__v");
+        const plainPost = post.toObject();
+        plainPost.comments = comments;
+        return plainPost;
+      })
+    );
+  }
+  return res
+    .status(200)
+    .json({ message: "Post fetched sucessfully", data: posts });
+});
 
 // delete post >
-exports.deletePost = async (req, res) => {
-  try {
-    const deletedPost = await Post.findByIdAndDelete(req.params.postId, {
+exports.deletePost = catchAsync(async (req, res, next) => {
+  const deletedPost = await Post.findOneAndDelete(
+    { ...applyDepartmentalFilter(req), _id: req.params.postId },
+    {
       new: true,
-    });
-    if (!deletedPost) {
-      return res.status(400).json({
-        status: "failed",
-        message: "no post found!",
-      });
     }
-    return res.status(204).json({
-      status: "success",
-    });
-  } catch (error) {
-    console.log("error occured", error);
-    return res.status(500).json({ message: "internal server error", error });
+  );
+  if (!deletedPost) {
+    return next(new AppError("no post found!", 400));
   }
-};
+  return res.status(204).json({
+    message: "success",
+  });
+});
 //upvote Post
-exports.upVote = async (req, res) => {
-  try {
-    const postId = req.params.postId;
-    const userId = req.user._id;
-    //1 check if user already upvoted
-    let post = await Post.findById(postId);
-    if (!post || !userId) {
-      return res.status(400).json({
-        status: "failed",
-        message: !userId ? "userId is not provided" : "no post found",
-      });
-    }
-    //2 remove from downVote if presen
-    post.downVotes = post.downVotes.filter(
-      (uid) => uid.toString() !== userId.toString()
+exports.upVote = catchAsync(async (req, res, next) => {
+  const postId = req.params.postId;
+  const userId = req.user._id;
+  //1 check if user already upvoted
+  let post = await Post.findById(postId);
+  if (!post || !userId) {
+    return next(
+      new AppError(!userId ? "userId is not provided" : "no post found", 400)
     );
-
-    //3 add to upVote if not Present
-    if (!post.upVotes.some((uid) => uid.toString() === userId.toString())) {
-      post.upVotes.push(userId);
-      post.votes += 1;
-    }
-
-    await post.save();
-
-    return res.status(200).json({
-      status: "success",
-      votes: post.votes,
-    });
-  } catch (error) {
-    console.error("Error in upvote function:", error);
-    return res.status(400).json({
-      status: "failed",
-      message: error.mesage,
-    });
   }
-};
+  //2 remove from downVote if presen
+  post.downVotes = post.downVotes.filter(
+    (uid) => uid.toString() !== userId.toString()
+  );
+
+  //3 add to upVote if not Present
+  if (!post.upVotes.some((uid) => uid.toString() === userId.toString())) {
+    post.upVotes.push(userId);
+    post.votes += 1;
+  }
+
+  await post.save();
+
+  return res.status(200).json({
+    message: "success",
+    votes: post.votes,
+  });
+});
 
 //Downvote
 
-exports.downVote = async (req, res) => {
-  try {
-    try {
-      const postId = req.params.postId;
-      const userId = req.user._id;
-      //1 check if user already upvoted
-      let post = await Post.findById(postId);
-      if (!post || !userId) {
-        return res.status(400).json({
-          status: "failed",
-          message: !userId ? "userId is not provided" : "no post found",
-        });
-      }
-      //2 remove from upVotes if presen
-      post.upVotes = post.upVotes.filter(
-        (uid) => uid.toString() !== userId.toString()
-      );
-
-      //3 add to downVote is not Present
-      if (!post.downVotes.some((uid) => uid == userId) && post.votes > 0) {
-        post.votes -= 1;
-        post.downVotes.push(userId);
-      }
-
-      await post.save();
-
-      return res.status(200).json({
-        status: "success",
-        votes: post.votes,
-      });
-    } catch (error) {
-      console.error("Error in upvote function:", error);
-      return res.status(400).json({
-        status: "failed",
-        message: error.message,
-      });
-    }
-  } catch (error) {
-    console.error("Error in downvote function:", error);
-    return res.status(500).json({ message: "Internal server error" });
+exports.downVote = catchAsync(async (req, res, next) => {
+  const postId = req.params.postId;
+  const userId = req.user._id;
+  //1 check if user already upvoted
+  let post = await Post.findById(postId);
+  if (!post || !userId) {
+    return next(
+      new AppError(!userId ? "userId is not provided" : "no post found", 400)
+    );
   }
-};
+  //2 remove from upVotes if presen
+  post.upVotes = post.upVotes.filter(
+    (uid) => uid.toString() !== userId.toString()
+  );
 
-exports.getVotes = async (req, res) => {
-  try {
-    const post = await Post.findById(req.params.postId);
-    if (!post) {
-      return res.status(400).json({
-        status: "failed",
-        message: "no post found",
-      });
-    }
-
-    return res.status(200).json({
-      status: "success",
-      votes: post.votes,
-    });
-  } catch (error) {
-    return res.status(400).json({
-      status: "failed",
-      message: error.mesage,
-      errror,
-    });
+  //3 add to downVote is not Present
+  if (
+    !post.downVotes.some((uid) => uid.toString() === userId.toString()) &&
+    post.votes > 0
+  ) {
+    post.votes -= 1;
+    post.downVotes.push(userId);
   }
-};
+
+  await post.save();
+
+  return res.status(200).json({
+    message: "success",
+    votes: post.votes,
+  });
+});
+
+exports.getVotes = catchAsync(async (req, res, next) => {
+  const post = await Post.findById(req.params.postId);
+  if (!post) {
+    return next(new AppError("no post found!", 400));
+  }
+
+  return res.status(200).json({
+    status: "success",
+    votes: post.votes,
+  });
+});
 
 //createcommet
-exports.createComment = async (req, res) => {
-  try {
-    const newComment = await Comment.create({
-      ...req.body,
-      author: req.user._id,
-      post: req.params.postId,
-    });
 
-    return res.status(201).json({
-      status: "success",
-      data: newComment,
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(400).json({
-      status: "failed",
-      message: error.message,
-      error,
-    });
-  }
-};
-exports.deleteComment = async (req, res) => {
-  try {
-    const deletedComment = await Comment.findByIdAndDelete(
-      req.params.commentId,
-      { new: true }
-    );
-    if (!deletedComment) {
-      return res.status(400).json({
-        status: "failed",
-        message: "no doc found!",
-      });
-    }
-    return res.status(204).json({
-      status: "success",
-    });
-  } catch (error) {
-    return res.status(400).json({
-      status: "failed",
-      message: error.message,
-      error,
-    });
-  }
-};
-exports.getAllPostComment = async (req, res) => {
-  try {
-    const comments = await Comment.find({ post: req.params.postId }).populate(
-      "author"
-    );
+exports.getTopUpvotedPosts = catchAsync(async (req, res, next) => {
+  // Fetch all posts and sort by Upvote count (length of Upvote array) in descending order
+  const topPosts = await Post.find(applyDepartmentalFilter(req))
+    .sort({ upVotes: -1 }) // Sorts based on the number of upvotes
+    .limit(5); // Retrieves the top 5 posts
 
-    return res.status(200).json({
-      status: "success",
-      comments,
-    });
-  } catch (error) {
-    return res.status(400).json({
-      status: "failed",
-      message: error.mesage,
-      error,
-    });
+  if (topPosts.length == 0) {
+    return res.status(404).json({ message: "No posts found" });
   }
-};
-
-exports.getTopUpvotedPosts = async (req, res) => {
-  try {
-    // Fetch all posts and sort by Upvote count (length of Upvote array) in descending order
-    const topPosts = await Post.find()
-      .sort({ upVotes: -1 }) // Sorts based on the number of upvotes
-      .limit(5); // Retrieves the top 5 posts
-
-    if (topPosts.length == 0) {
-      return res.status(404).json({ message: "No posts found" });
-    }
-    return res.status(200).json({
-      status: "success",
-      data: topPosts,
-    });
-  } catch (error) {
-    console.error("Error fetching top upvoted posts:", error);
-    return res.status(400).json({
-      status: "failed",
-      message: error.message,
-      error,
-    });
-  }
-};
+  return res.status(200).json({
+    status: "success",
+    data: topPosts,
+  });
+});
 
 //TODO implement search post
-exports.searchPosts = async (req, res) => {
+exports.searchPosts = async (req, res, next) => {
   try {
     const { query, page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * parseInt(limit);

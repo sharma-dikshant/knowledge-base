@@ -1,7 +1,8 @@
 const User = require("../models/userModel");
-//TODO user controller
+const catchAsync = require("../utils/catchAsync");
+const AppError = require("../utils/AppError");
 //update user
-exports.updateUser = async (req, res) => {
+exports.updateUser = catchAsync(async (req, res, next) => {
   try {
     const { employeeCode, ...updateFields } = req.body; // Extract `employeeCode` and other fields
 
@@ -43,26 +44,18 @@ exports.updateUser = async (req, res) => {
   } catch (error) {
     return res.status(500).json({ message: "Internal server error", error });
   }
-};
+});
 
 //delete userdata
-exports.deleteUser = async (req, res) => {
-  try {
-    const { employeeCode } = req.body;
-    if (!employeeCode) {
-      console.log("no employeecode");
-
-      return res
-        .status(400)
-        .json({ message: "unable to delete please provide uesrId" });
-    }
-
-    await User.findOneAndDelete({ EmployeeCode: employeeCode });
-    return res.status(201).json({ message: "user deleted successfully" });
-  } catch (error) {
-    return res.status(500).json({ message: "Internal server error", error });
+exports.deleteUser = catchAsync(async (req, res, next) => {
+  const { employeeCode } = req.body;
+  if (!employeeCode) {
+    return next("employeeId is required", 400);
   }
-};
+
+  await User.findOneAndDelete({ EmployeeCode: employeeCode });
+  return res.status(201).json({ message: "user deleted successfully" });
+});
 
 exports.getUser = (req, res) => {
   if (req.user) {
@@ -78,24 +71,13 @@ exports.getUser = (req, res) => {
   });
 };
 
-exports.getUserDetails = async (req, res) => {
-  try {
-    const user = await User.findOne({ employeeId: req.params.employeeId });
-    if (!user) {
-      return res.status(400).json({
-        message: "no user found!",
-      });
-    }
-    res.status(200).json({
-      status: "success",
-      data: user,
-    });
-  } catch (error) {
-    console.log(error);
-    return res.status(400).json({
-      status: "failed",
-      message: error.message,
-      error,
-    });
+exports.getUserDetails = catchAsync(async (req, res, next) => {
+  const user = await User.findOne({ employeeId: req.params.employeeId });
+  if (!user) {
+    return next(new AppError("user user found!", 404));
   }
-};
+  res.status(200).json({
+    status: "success",
+    data: user,
+  });
+});

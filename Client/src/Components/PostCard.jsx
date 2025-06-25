@@ -19,15 +19,12 @@ import {
   BiDownvote,
 } from "react-icons/bi";
 
-import ModalWindow from "./../ui/ModalWindow";
-import CreateSolutionForm from "./CreateSolutionForm";
-
 function PostCard({ post }) {
   const user = useOutletContext();
   const [upVoted, setUpVoted] = useState(false);
   const [downVoted, setDownVoted] = useState(false);
   const [votes, setVotes] = useState(post.votes || 0);
-  const [comments, setComments] = useState([]);
+  const [comments, setComments] = useState(post.comments);
   const [newComment, setNewComment] = useState("");
   const postId = post._id;
   useEffect(() => {
@@ -38,20 +35,6 @@ function PostCard({ post }) {
       setDownVoted(true);
     }
   }, [post, user]);
-
-  useEffect(() => {
-    async function getComments() {
-      try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_SERVER_URL}/api/post/getAllComment/${postId}`
-        );
-        setComments(response.data.comments);
-      } catch (error) {
-        console.log(error);
-      }
-    }
-    getComments();
-  }, [postId]);
 
   async function handleVote(type) {
     try {
@@ -119,7 +102,6 @@ function PostCard({ post }) {
           gap={1}
           sx={{ alignItems: "center" }}
         >
-          <Chip label={`Status: ${post.status}`} size="small" color="warning" />
           <Chip
             label={`Category: ${post.category}`}
             size="small"

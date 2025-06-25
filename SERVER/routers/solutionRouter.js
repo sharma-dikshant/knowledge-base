@@ -1,6 +1,6 @@
 const express = require("express");
 const solutionController = require("./../controller/solutionController");
-const authController = require("./../controller/AuthController");
+const authController     = require("./../controller/authController");
 const router = express.Router();
 
 router.get("/:solutionId", solutionController.getSolution);

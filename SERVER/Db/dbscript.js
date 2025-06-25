@@ -25,12 +25,19 @@ ConnectDb();
 
 const data = JSON.parse(fs.readFileSync("./mock_posts.json", "utf-8"));
 
+const updatedPosts = data.map((post) => ({
+  ...post,
+  private: Math.random() < 0.3, // ~30% posts are private
+}));
+
 async function addData() {
   try {
-    await Post.insertMany(data);
+    await Post.insertMany(updatedPosts);
     console.log("success");
   } catch (error) {
     console.log(error);
+  }finally {
+    process.exit(1);
   }
 }
 

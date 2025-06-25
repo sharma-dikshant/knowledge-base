@@ -9,7 +9,7 @@ import AuthPage from "./Pages/AuthPage";
 import { Toaster } from "react-hot-toast";
 import PostPage from "./Pages/PostPage";
 
-import loader from "./utils/userLoader";
+import loader from "./utils/dataLoader";
 
 const router = createBrowserRouter([
   {
