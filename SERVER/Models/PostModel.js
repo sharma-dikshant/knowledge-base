@@ -21,10 +21,10 @@ const postSchema = new mongoose.Schema(
     },
     status: {
       //* pending, reviewed, verified
-      type: String,
+      type: Number,
       required: [true, "post must have valid status"],
-      enum: ["pending", "reviewed", "verified"],
-      default: "pending",
+      enum: [1, 2, 3], // pending approved cancelled
+      default: 1, //pending
     },
     private: {
       type: Boolean,
@@ -47,7 +47,5 @@ const postSchema = new mongoose.Schema(
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
 
-
 const Post = mongoose.model("Post", postSchema);
 module.exports = Post;
-

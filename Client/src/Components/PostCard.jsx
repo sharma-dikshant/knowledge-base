@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useOutletContext, Link as RouterLink } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 import axios from "axios";
 import {
   Paper,
@@ -11,6 +11,8 @@ import {
   Box,
   Avatar,
   Link,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
 import {
   BiUpvote,
@@ -24,14 +26,16 @@ function PostCard({ post }) {
   const [upVoted, setUpVoted] = useState(false);
   const [downVoted, setDownVoted] = useState(false);
   const [votes, setVotes] = useState(post.votes || 0);
-  const [comments, setComments] = useState(post.comments);
+  const [comments, setComments] = useState(post.comments || []);
   const [newComment, setNewComment] = useState("");
+  const [activeTab, setActiveTab] = useState("comments");
   const postId = post._id;
+
   useEffect(() => {
-    if (post.upVotes.some((uid) => user._id === uid)) {
+    if (post.upVotes?.includes(user._id)) {
       setUpVoted(true);
     }
-    if (post.downVotes.some((uid) => user._id === uid)) {
+    if (post.downVotes?.includes(user._id)) {
       setDownVoted(true);
     }
   }, [post, user]);
@@ -70,10 +74,7 @@ function PostCard({ post }) {
         { content: newComment },
         { withCredentials: true }
       );
-      setComments((prev) => [
-        ...prev,
-        { content: newComment.trim(), author: user },
-      ]);
+      setComments((prev) => [...prev, { content: newComment, author: user }]);
       setNewComment("");
     } catch (error) {
       console.log(error);
@@ -146,48 +147,93 @@ function PostCard({ post }) {
 
       <Divider sx={{ my: 2 }} />
 
-      <Box textAlign="left">
-        <Typography variant="subtitle1" gutterBottom>
-          Comments
-        </Typography>
-        {comments.length === 0 ? (
-          <Typography variant="body2" color="text.secondary">
-            No comments yet.
+      {/* Toggle Section */}
+      <ToggleButtonGroup
+        value={activeTab}
+        exclusive
+        onChange={(_, newValue) => {
+          if (newValue !== null) setActiveTab(newValue);
+        }}
+        aria-label="toggle comments/solutions"
+        size="small"
+      >
+        <ToggleButton value="comments">Comments</ToggleButton>
+        <ToggleButton value="solutions">Solutions</ToggleButton>
+      </ToggleButtonGroup>
+
+      {/* Comments or Solutions */}
+      {activeTab === "comments" ? (
+        <Box textAlign="left" mt={2}>
+          <Typography variant="subtitle1" gutterBottom>
+            Comments
           </Typography>
-        ) : (
-          comments.map((comment, idx) => (
-            <Box key={idx} display="flex" alignItems="center" gap={1} mb={1}>
-              <Link href={`/u/${comment.author.employeeId}`} underline="none">
-                <Avatar
-                  sx={{
-                    bgcolor: "#1976d2",
-                    width: 32,
-                    height: 32,
-                    fontSize: 14,
-                  }}
+          {comments.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No comments yet.
+            </Typography>
+          ) : (
+            comments.map((comment, idx) => (
+              <Box key={idx} display="flex" alignItems="center" gap={1} mb={1}>
+                <Link
+                  href={`/u/${comment.author?.employeeId}`}
+                  underline="none"
                 >
-                  {comment.author?.name?.slice(0, 2).toUpperCase() || "??"}
-                </Avatar>
-              </Link>
-              <Typography variant="body2">{comment.content}</Typography>
-            </Box>
-          ))
-        )}
+                  <Avatar
+                    sx={{
+                      bgcolor: "#1976d2",
+                      width: 32,
+                      height: 32,
+                      fontSize: 14,
+                    }}
+                  >
+                    {comment.author?.name?.slice(0, 2).toUpperCase() || "??"}
+                  </Avatar>
+                </Link>
+                <Typography variant="body2">{comment.content}</Typography>
+              </Box>
+            ))
+          )}
 
-        <Box display="flex" gap={1} mt={2}>
-          <TextField
-            fullWidth
-            size="small"
-            placeholder="Add a comment"
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-          />
-          <Button variant="contained" onClick={handleAddComment}>
-            Comment
-          </Button>
+          <Box display="flex" gap={1} mt={2}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Add a comment"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+            />
+            <Button variant="contained" onClick={handleAddComment}>
+              Comment
+            </Button>
+          </Box>
         </Box>
-      </Box>
+      ) : (
+        <Box textAlign="left" mt={2}>
+          <Typography variant="subtitle1" gutterBottom>
+            Solutions
+          </Typography>
+          {post.solutions?.length > 0 ? (
+            post.solutions.map((solution, idx) => (
+              <Paper
+                key={idx}
+                variant="outlined"
+                sx={{ p: 2, mb: 1, backgroundColor: "#f9f9f9" }}
+              >
+                <Typography fontWeight="bold">
+                  Solution {idx + 1} by {solution.author?.name || "Anonymous"}
+                </Typography>
+                <Typography>{solution.description}</Typography>
+              </Paper>
+            ))
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              No solutions yet.
+            </Typography>
+          )}
+        </Box>
+      )}
 
+      {/* Votes */}
       <Box display="flex" alignItems="center" gap={1} mt={2}>
         <Button onClick={() => handleVote("upVote")}>
           {upVoted ? <BiSolidUpvote size={20} /> : <BiUpvote size={20} />}

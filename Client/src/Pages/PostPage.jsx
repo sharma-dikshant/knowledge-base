@@ -39,7 +39,7 @@ function PostPage() {
     }
   }
 
-  if (!data.post) return <Typography>Loading...</Typography>;
+  if (!data || !data.post) return <Typography>Loading...</Typography>;
 
   return (
     <Paper sx={{ p: 4, maxWidth: "1000px", mx: "auto", mt: 4 }}>

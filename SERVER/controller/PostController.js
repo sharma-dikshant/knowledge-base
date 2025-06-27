@@ -34,9 +34,13 @@ exports.createPost = catchAsync(async (req, res, next) => {
 });
 
 exports.updatePost = async (req, res, next) => {
-  const newPost = await Post.findByIdAndUpdate(req.params.postId, req.body, {
-    new: true,
-  });
+  const newPost = await Post.findOneAndUpdate(
+    { ...applyDepartmentalFilter(req), _id: req.params.postId },
+    req.body,
+    {
+      new: true,
+    }
+  );
   if (!newPost) {
     return next(new AppError("no post found with given id", 404));
   }
@@ -118,7 +122,10 @@ exports.getAllPosts = catchAsync(async (req, res, next) => {
   query = query.skip(skipped).limit(limit);
 
   // Fetch all posts in desired way from the database
-  let posts = await query.select("-__v").populate("author", "name employeeId");
+  let posts = await query
+    .select("-__v")
+    .populate("author", "name employeeId")
+    .lean();
   if (posts.length == 0) {
     return next(new AppError("No posts found", 400));
   }
@@ -132,12 +139,29 @@ exports.getAllPosts = catchAsync(async (req, res, next) => {
           .limit(limit)
           .populate("author", "name employeeId")
           .select("-__v");
-        const plainPost = post.toObject();
+        const plainPost = post;
         plainPost.comments = comments;
         return plainPost;
       })
     );
   }
+
+  if (req.query.solutions) {
+    const limit = parseInt(req.query.solutions) || 5;
+    posts = await Promise.all(
+      posts.map(async (post) => {
+        const solutions = await Solution.find({ post: post._id })
+          .sort("-createdAt")
+          .limit(limit)
+          .populate("author", "name employeeId")
+          .select("-__v");
+        const plainPost = post;
+        plainPost.solutions = solutions;
+        return plainPost;
+      })
+    );
+  }
+
   return res
     .status(200)
     .json({ message: "Post fetched sucessfully", data: posts });
@@ -251,79 +275,16 @@ exports.getTopUpvotedPosts = catchAsync(async (req, res, next) => {
   });
 });
 
-//TODO implement search post
-exports.searchPosts = async (req, res, next) => {
-  try {
-    const { query, page = 1, limit = 10 } = req.query;
-    const skip = (page - 1) * parseInt(limit);
-
-    if (!query) return res.status(400).json({ message: "Query is required" });
-
-    const queryLower = query.toLowerCase();
-    const queryWords = queryLower.split(/\s+/).filter((w) => w.length > 2);
-    let searchMethod = "full-text";
-    let posts = [];
-
-    // First determine likely category from query
-    const detectedCategory = detectCategory(queryLower);
-
-    // Step 1: Full-Text Search in detected category (if any)
-    const searchConditions = detectedCategory
-      ? { $text: { $search: query }, Category: detectedCategory }
-      : { $text: { $search: query } };
-
-    posts = await Post.find(searchConditions, { score: { $meta: "textScore" } })
-      .sort({ score: { $meta: "textScore" }, createdAt: -1 })
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    // Step 2: Targeted Title Match in detected category
-    if (posts.length === 0 && detectedCategory) {
-      searchMethod = "title-match";
-      const titleRegex = new RegExp(queryWords.join("|"), "i");
-      posts = await Post.find({
-        Title: titleRegex,
-        Category: detectedCategory,
-      })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(parseInt(limit));
-    }
-
-    // Step 3: Verify results are actually relevant
-    if (posts.length > 0) {
-      const relevantPosts = posts.filter((post) => {
-        const content = [
-          post.Title || "",
-          post.Description || "",
-          post.Solution || "",
-        ]
-          .join(" ")
-          .toLowerCase();
-
-        // At least one query word must appear in the content
-        return queryWords.some((word) => content.includes(word));
-      });
-
-      if (relevantPosts.length > 0) {
-        return res.status(200).json({
-          message: `Search results (${searchMethod})`,
-          searchMethod,
-          posts: relevantPosts.slice(0, parseInt(limit)),
-        });
-      }
-    }
-
-    // If no relevant results found
-    return res.status(404).json({
-      message: "No matching posts found",
-      suggestion: "Try different search terms or check if the topic exists",
-    });
-  } catch (error) {
-    console.error("Search error:", error);
-    return res.status(500).json({ message: "Internal server error", error });
+exports.searchPosts = catchAsync(async (req, res, next) => {
+  const posts = await Post.find({
+    ...applyDepartmentalFilter(req),
+    $text: { $search: req.query.query },
+  }).select("_id title");
+  if (posts.length == 0) {
+    return next(new AppError("no posts found!", 404));
   }
-};
+  return res.status(200).json({ message: "success", posts });
+});
 
 // Helper function to detect category from query
 function detectCategory(queryLower) {
@@ -350,28 +311,3 @@ function detectCategory(queryLower) {
   }
   return null;
 }
-exports.filterPostsByDepartment = async (req, res) => {
-  try {
-    const { department, page = 1, limit = 10 } = req.query;
-    const skip = (page - 1) * limit;
-
-    if (!department) {
-      return res.status(400).json({ message: "Department is required" });
-    }
-
-    const posts = await Post.find({ Department: department })
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    if (posts.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No posts found for this department" });
-    }
-
-    res.status(200).json({ message: "Filtered posts", posts });
-  } catch (error) {
-    console.error("Error filtering posts:", error);
-    res.status(500).json({ message: "Internal server error", error });
-  }
-};

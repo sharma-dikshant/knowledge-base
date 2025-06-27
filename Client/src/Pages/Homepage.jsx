@@ -14,6 +14,7 @@ import {
 } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
+import SearchBar from "../Components/SearchBar.jsx";
 
 const filterOptions = [
   { name: "Recent", value: "-createdAt" },
@@ -30,9 +31,6 @@ function Homepage() {
   const [sort, setSort] = useState(searchParams.get("sort") || "-createdAt");
   const [department, setDepartment] = useState(
     searchParams.get("department") || "all"
-  );
-  const [searchQuery, setSearchQuery] = useState(
-    searchParams.get("search") || ""
   );
 
   useEffect(() => {
@@ -58,7 +56,6 @@ function Homepage() {
     setPage(parseInt(searchParams.get("page") || 1));
     setSort(searchParams.get("sort") || "-createdAt");
     setDepartment(searchParams.get("department") || "all");
-    setSearchQuery(searchParams.get("search") || "");
   }, [searchParams]);
 
   useEffect(() => {
@@ -67,6 +64,7 @@ function Homepage() {
         setIsLoading(true);
         const urlParams = new URLSearchParams(searchParams.toString());
         urlParams.set("comments", 5);
+        urlParams.set("solutions", 1);
 
         const response = await axios.get(
           `${
@@ -104,18 +102,7 @@ function Homepage() {
           />
           <h1>How Can We Help You?</h1>
         </div>
-        <div className="searchsection">
-          <input
-            className="searchBar"
-            placeholder="Search for help..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <IoIosSearch
-            style={{ fontSize: "1.5rem", cursor: "pointer" }}
-            onClick={() => handleParamsChange({ search: searchQuery })}
-          />
-        </div>
+        <SearchBar />
       </section>
 
       <section className="midSection">
