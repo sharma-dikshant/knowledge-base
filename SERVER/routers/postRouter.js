@@ -26,4 +26,8 @@ router.post("/downVote/:postId", postController.downVote);
 router.post("/comment/:postId", commentController.createComment);
 router.delete("/comment/:commentId", commentController.deleteComment);
 
+router.use(authController.restrictTo("admin", "moderator"));
+router.post("/approve-post/:postId", postController.approvePost);
+router.post("/reject-post/:postId", postController.rejectPost);
+
 module.exports = router;

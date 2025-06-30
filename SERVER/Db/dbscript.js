@@ -4,7 +4,6 @@ const mongoose = require("mongoose");
 const Post = require("./../models/PostModel");
 dotenv.config();
 
-
 const ConnectDb = async () => {
   try {
     await mongoose.connect("mongodb://localhost:27017/RSO-KNOWLEDGE-BASE", {
@@ -36,7 +35,7 @@ async function addData() {
     console.log("success");
   } catch (error) {
     console.log(error);
-  }finally {
+  } finally {
     process.exit(1);
   }
 }

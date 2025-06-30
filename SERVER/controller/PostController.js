@@ -9,7 +9,7 @@ const applyDepartmentalFilter = (req) => {
   if (req.user) {
     // if user is logged in then we can show the private post of its department
     // query = query.$
-    if (req.user.role === "admin") {
+    if (req.user.role === "admin" || req.user.role === "moderator") {
       departmentfilter = { $or: [{ private: false }, { private: true }] };
     } else {
       departmentfilter = {
@@ -87,6 +87,7 @@ exports.getPostDetails = async (req, res, next) => {
 };
 
 exports.getAllPosts = catchAsync(async (req, res, next) => {
+  //TODO 30 refactor this controller to handle all the request from common user, moderators and user to other user data and its own data and filtering and field limitation
   // sorting
   // pagination
   //apply departmental filter
@@ -286,28 +287,29 @@ exports.searchPosts = catchAsync(async (req, res, next) => {
   return res.status(200).json({ message: "success", posts });
 });
 
-// Helper function to detect category from query
-function detectCategory(queryLower) {
-  if (
-    queryLower.includes("hr") ||
-    queryLower.includes("human resource") ||
-    queryLower.includes("policy")
-  ) {
-    return "HR";
-  }
-  if (
-    queryLower.includes("canteen") ||
-    queryLower.includes("food") ||
-    queryLower.includes("meal")
-  ) {
-    return "Canteen";
-  }
-  if (
-    queryLower.includes("database") ||
-    queryLower.includes("api") ||
-    queryLower.includes("server")
-  ) {
-    return "Database";
-  }
-  return null;
-}
+/**
+ *  Controller functions for managing status of posts
+ */
+
+exports.getAllPendingPosts = catchAsync(async (req, res, next) => {
+  const status = req.query.status * 1 || 1;
+  const posts = await Post.find({ status });
+
+  res.status(200).json({
+    message: "success",
+    posts,
+  });
+});
+
+exports.approvePost = catchAsync(async (req, res, next) => {
+  await Post.findOneAndUpdate({ _id: req.params.postId }, { status: 2 });
+  res.status(200).json({
+    message: "post approved!",
+  });
+});
+exports.rejectPost = catchAsync(async (req, res, next) => {
+  await Post.findOneAndUpdate({ _id: req.params.postId }, { status: 3 });
+  res.status(200).json({
+    message: "post rejected!",
+  });
+});
