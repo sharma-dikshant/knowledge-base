@@ -9,7 +9,6 @@ const authRoutes = require("./routers/authRouter");
 const PostRoutes = require("./routers/postRouter");
 const solutionRoutes = require("./routers/solutionRouter");
 const departmentRoutes = require("./routers/departmentRouter");
-const moderatorRoutes  = require("./routers/moderatorRouter");
 
 const app = express();
 
@@ -24,7 +23,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/post", PostRoutes);
 app.use("/api/solution", solutionRoutes);
 app.use("/api/department", departmentRoutes);
-app.use("/api/moderator", moderatorRoutes); //TODO 30
 
 app.use("/", (req, res) => {
   res.status(200).json({

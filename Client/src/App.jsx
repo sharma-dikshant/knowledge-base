@@ -37,6 +37,7 @@ const router = createBrowserRouter([
       {
         path: "/admin",
         element: <AdminHomepage />,
+        loader: loader.loadAllUsers
       },
       {
         path: "/moderator",

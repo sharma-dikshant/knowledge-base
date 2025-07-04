@@ -1,5 +1,5 @@
 const express = require("express");
-const postController = require("../controller/postController");
+const postController    = require("../controller/postController");
 const commentController = require("../controller/commentController");
 const authMiddleware = require("../Middleware/AuthMiddleware");
 const authController = require("./../controller/authController");

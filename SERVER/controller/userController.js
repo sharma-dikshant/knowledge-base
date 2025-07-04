@@ -1,6 +1,22 @@
 const User = require("../models/userModel");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
+const ApiFeature = require("./../utils/APIFeatures");
+
+exports.getAllUser = catchAsync(async (req, res, next) => {
+  const baseQuery = User.find({});
+  const api = new ApiFeature(baseQuery)
+    .paginate(req.query.page, req.query.limit)
+    .sort(req.query.sort)
+    .limitFields("-password -__v");
+
+  const users = await api.query;
+  res.status(200).json({
+    status: "success",
+    message: "fetched users",
+    data: users,
+  });
+});
 //update user
 exports.updateUser = catchAsync(async (req, res, next) => {
   try {
@@ -48,13 +64,11 @@ exports.updateUser = catchAsync(async (req, res, next) => {
 
 //delete userdata
 exports.deleteUser = catchAsync(async (req, res, next) => {
-  const { employeeCode } = req.body;
-  if (!employeeCode) {
-    return next("employeeId is required", 400);
-  }
-
-  await User.findOneAndDelete({ EmployeeCode: employeeCode });
-  return res.status(201).json({ message: "user deleted successfully" });
+  const user = await User.findByIdAndDelete(req.params.userId, { new: true });
+  if (!user) return next(new AppError("no user found!", 404));
+  return res.status(204).json({
+    message: "successfully deleted user",
+  });
 });
 
 exports.getUser = (req, res) => {

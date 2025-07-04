@@ -7,7 +7,8 @@ router = express.Router();
 
 router.get("/userDetails/:employeeId", userController.getUserDetails);
 router.post("/updateUser", authMiddleware, userController.updateUser);
-router.post("/deleteUser", authMiddleware, userController.deleteUser);
+router.delete("/deleteUser/:userId", authMiddleware, userController.deleteUser);
 router.get("/getUser", authController.protected, userController.getUser);
+router.get('/all-users', userController.getAllUser);
 
 module.exports = router;

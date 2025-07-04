@@ -32,10 +32,10 @@ function PostCard({ post }) {
   const postId = post._id;
 
   useEffect(() => {
-    if (post.upVotes?.includes(user._id)) {
+    if (post.upVotes?.includes(user?._id)) {
       setUpVoted(true);
     }
-    if (post.downVotes?.includes(user._id)) {
+    if (post.downVotes?.includes(user?._id)) {
       setDownVoted(true);
     }
   }, [post, user]);

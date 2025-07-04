@@ -3,6 +3,8 @@ const Comment = require("../models/commentModel");
 const Solution = require("../models/solutionModal");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
+const APIFeatures = require("../utils/APIFeatures");
+const PostFeature = require("../utils/PostFeature");
 
 const applyDepartmentalFilter = (req) => {
   let departmentfilter;
@@ -23,6 +25,33 @@ const applyDepartmentalFilter = (req) => {
     departmentfilter = { private: false };
   }
   return departmentfilter;
+};
+
+const applyStatusFilter = (req) => {
+  let statusFilter;
+  const reqStatus = req.query.status || 2; // default verified
+
+  if (req.user) {
+    if (req.user.role === "admin") {
+      statusFilter = { status: reqStatus }; // can see post with any status
+    } else if (req.user.role === "moderator") {
+      // can see post with any status but of there own department
+      statusFilter = {
+        department: req.user.department,
+        status: req.query.status,
+      };
+    } else if (req.user.role === "user") {
+      // can only see the there own post whose status matched with given status
+      statusFilter = {
+        author: req.user._id,
+        status: req.query.status,
+      };
+    }
+  } else {
+    statusFilter = { status: 2 }; // show only verified posts
+  }
+
+  return statusFilter;
 };
 
 exports.createPost = catchAsync(async (req, res, next) => {
@@ -87,80 +116,30 @@ exports.getPostDetails = async (req, res, next) => {
 };
 
 exports.getAllPosts = catchAsync(async (req, res, next) => {
-  //TODO 30 refactor this controller to handle all the request from common user, moderators and user to other user data and its own data and filtering and field limitation
-  // sorting
-  // pagination
-  //apply departmental filter
-  let query = Post.find(applyDepartmentalFilter(req));
+  let baseQuery = Post.find({
+    ...applyDepartmentalFilter(req),
+    ...applyStatusFilter(req),
+  });
+  const api = new APIFeatures(baseQuery)
+    .sort(req.query.sort)
+    .paginate(req.query.page, req.query.limit)
+    .limitFields();
 
-  // console.log(departmentfilter);
-  /**
-   * if department is given
-   */
-
-  if (req.query.department && req.query.department != "all") {
-    query = query.find({ department: req.query.department });
-  }
-  /**
-   * sorting
-   * based of time of created => createdAt, -createdAt
-   * based of votes => votes, -votes
-   */
-  if (req.query.sort) {
-    const sortQ = req.query.sort.split(",").join(" ");
-    query = query.sort(sortQ);
+  if (req.query.department) {
+    api.query = api.query.find({ department: req.query.department });
   }
 
-  /**
-   * Pagination
-   * page => page no
-   * limit => no. of results
-   */
+  const features = new PostFeature(api.query);
+  features.populateAuthor();
 
-  const page = req.query.page || 1;
-  const limit = req.query.limit || 10;
-  const skipped = (page - 1) * limit;
-  query = query.skip(skipped).limit(limit);
-
-  // Fetch all posts in desired way from the database
-  let posts = await query
-    .select("-__v")
-    .populate("author", "name employeeId")
-    .lean();
-  if (posts.length == 0) {
-    return next(new AppError("No posts found", 400));
-  }
+  let posts = await features.query.lean();
 
   if (req.query.comments) {
-    const limit = parseInt(req.query.comments) || 5;
-    posts = await Promise.all(
-      posts.map(async (post) => {
-        const comments = await Comment.find({ post: post._id })
-          .sort("-createdAt")
-          .limit(limit)
-          .populate("author", "name employeeId")
-          .select("-__v");
-        const plainPost = post;
-        plainPost.comments = comments;
-        return plainPost;
-      })
-    );
+    posts = await features.populateComments(posts, 5, "-createdAt");
   }
 
   if (req.query.solutions) {
-    const limit = parseInt(req.query.solutions) || 5;
-    posts = await Promise.all(
-      posts.map(async (post) => {
-        const solutions = await Solution.find({ post: post._id })
-          .sort("-createdAt")
-          .limit(limit)
-          .populate("author", "name employeeId")
-          .select("-__v");
-        const plainPost = post;
-        plainPost.solutions = solutions;
-        return plainPost;
-      })
-    );
+    posts = await features.populateSolution(posts, 1, "-createdAt");
   }
 
   return res
@@ -290,16 +269,6 @@ exports.searchPosts = catchAsync(async (req, res, next) => {
 /**
  *  Controller functions for managing status of posts
  */
-
-exports.getAllPendingPosts = catchAsync(async (req, res, next) => {
-  const status = req.query.status * 1 || 1;
-  const posts = await Post.find({ status });
-
-  res.status(200).json({
-    message: "success",
-    posts,
-  });
-});
 
 exports.approvePost = catchAsync(async (req, res, next) => {
   await Post.findOneAndUpdate({ _id: req.params.postId }, { status: 2 });

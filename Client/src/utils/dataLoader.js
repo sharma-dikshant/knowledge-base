@@ -26,4 +26,27 @@ async function loadPostDetails() {
   }
 }
 
-export default { loadUser, loadPostDetails };
+// async function protected(allowedUser = []) {
+//   const user = await loadUser();
+//   if (allowedUser.length == 0) return true;
+//   if (allowedUser.length > 0 && allowedUser.includes(user.role)) return true;
+//   return false;
+// }
+
+async function loadAllUsers() {
+  const user = await loadUser();
+  if (!user || user.role !== "admin") {
+    return "please login as admin!";
+  }
+
+  const response = await axios.get(
+    `${import.meta.env.VITE_SERVER_URL}/api/user/all-users`,
+    {
+      withCredentials: true,
+    }
+  );
+
+  return response.data.data;
+}
+
+export default { loadUser, loadPostDetails, loadAllUsers };
