@@ -20,6 +20,22 @@ function generateToken(payload) {
   return token;
 }
 
+function getClientIP(req) {
+  // const ip = req.headers;
+  const ip = req.headers;
+  // return ip;
+  return ip;
+}
+
+function setCookies(res, token) {
+  res.cookie("authToken", token, {
+    httpOnly: true, // Prevents client-side JavaScript access
+    secure: true, // Secure only in production
+    sameSite: "None", // Prevents CSRF attacks
+    maxAge: 90 * 24 * 60 * 60 * 1000, // 90 day expiration
+  });
+}
+
 exports.login = catchAsync(async (req, res, next) => {
   const { employeeId, password, captchaInput } = req.body;
   if (!employeeId || !password) {
@@ -45,12 +61,7 @@ exports.login = catchAsync(async (req, res, next) => {
     name: user.name,
   });
 
-  res.cookie("authToken", token, {
-    httpOnly: true, // Prevents client-side JavaScript access
-    secure: process.env.NODE_ENV === "production", // Secure only in production
-    sameSite: "Strict", // Prevents CSRF attacks
-    maxAge: 90 * 24 * 60 * 60 * 1000, // 90 day expiration
-  });
+  setCookies(res, token);
 
   res.json({
     message: "login sucessfully",
@@ -64,19 +75,17 @@ exports.signUp = catchAsync(async (req, res, next) => {
   if (!department) {
     return next(new AppError("given department does not exit!", 400));
   }
-
   const newUser = await User.create(req.body);
+
+  if (!newUser) return next(new AppError("failed to created account"));
   const token = generateToken({
     _id: newUser._id,
     employeeId: newUser.employeeId,
     name: newUser.name,
   });
-  res.cookie("authToken", token, {
-    httpOnly: true, // Prevents client-side JavaScript access
-    secure: process.env.NODE_ENV === "production", // Secure only in production
-    sameSite: "Strict", // Prevents CSRF attacks
-    maxAge: 90 * 24 * 60 * 60 * 1000, // 90 day expiration
-  });
+
+  setCookies(res, token);
+
   return res.status(200).json({
     status: "success",
     token,
@@ -84,12 +93,7 @@ exports.signUp = catchAsync(async (req, res, next) => {
 });
 
 exports.logout = (req, res) => {
-  res.cookie("authToken", "invalid", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "Strict",
-    maxAge: 90 * 24 * 60 * 60 * 1000,
-  });
+  setCookies(res, "invalid");
   return res.status(200).json({
     message: "logout successfully",
   });
@@ -118,12 +122,7 @@ exports.protected = async (req, res, next) => {
     try {
       decoded = await promisify(jwt.verify)(token, process.env.secretKey);
     } catch (error) {
-      console.log(error);
-      return res.status(400).json({
-        status: "failed",
-        message: `error in authorization! ${error.message}`,
-        error,
-      });
+      return next(error);
     }
     //3. Check if user exists
     const currentUser = await User.findById(decoded._id);

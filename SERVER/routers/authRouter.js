@@ -5,8 +5,8 @@ const sessionMiddleware = require("../Middleware/MiddlewareCaptcha");
 
 router = express.Router();
 
-router.get("/captcha", sessionMiddleware, authController.getCaptcha);
-router.post("/login", loginLimiter, sessionMiddleware, authController.login);
+router.get("/captcha", authController.getCaptcha);
+router.post("/login", authController.login);
 router.post("/signup", authController.signUp);
 router.post("/logout", authController.logout);
 

@@ -1,20 +1,17 @@
 import { useEffect, useState } from "react";
 import "./Pagecss/Homepage.css";
-import { IoIosSearch } from "react-icons/io";
 
 import { Pagination } from "@mui/material";
 import SelectElement from "../ui/SelectElement.jsx";
 import ModalWindow from "../ui/ModalWindow.jsx";
 import PostSection from "../Components/PostSection.jsx";
-import CreatePostForm from "./../Components/CreatePostForm.jsx";
-import {
-  useLocation,
-  useOutletContext,
-  useSearchParams,
-} from "react-router-dom";
+import CreatePostForm from "../Components/CreatePostForm.jsx";
+import { useOutletContext, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import SearchBar from "../Components/SearchBar.jsx";
+
+import API_ROUTES from "../services/api.js";
 
 const filterOptions = [
   { name: "Recent", value: "-createdAt" },
@@ -22,41 +19,34 @@ const filterOptions = [
 ];
 
 function Homepage() {
-  const [departmentOptions, setDepartmentOptions] = useState([]);
-  const [searchParams, setSearchParams] = useSearchParams();
   const user = useOutletContext();
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [page, setPage] = useState(parseInt(searchParams.get("page")) || 1);
-  const [sort, setSort] = useState(searchParams.get("sort") || "-createdAt");
-  const [department, setDepartment] = useState(
-    searchParams.get("department") || "all"
-  );
+  const [departmentOptions, setDepartmentOptions] = useState([]);
+
+  const page = parseInt(searchParams.get("page")) || 1;
+  const sort = searchParams.get("sort") || "-createdAt";
+  const department = searchParams.get("department") || "all";
 
   useEffect(() => {
     async function fetchDepartments() {
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_SERVER_URL}/api/department/all`
-        );
-        const d = response.data.departments.map((dept) => ({
+        const response = await axios.get(API_ROUTES.departments.getAll);
+        const options = response.data.departments.map((dept) => ({
           name: dept.name,
           value: dept.name,
         }));
-        setDepartmentOptions([{ name: "All", value: "all" }, ...d]);
+        setDepartmentOptions([{ name: "All", value: "all" }, ...options]);
       } catch (error) {
-        console.log(error);
-        toast.error("Failed to fetch department");
+        console.error(error);
+        toast.error("Failed to fetch departments");
       }
     }
+
     fetchDepartments();
   }, []);
-
-  useEffect(() => {
-    setPage(parseInt(searchParams.get("page") || 1));
-    setSort(searchParams.get("sort") || "-createdAt");
-    setDepartment(searchParams.get("department") || "all");
-  }, [searchParams]);
 
   useEffect(() => {
     async function fetchPosts() {
@@ -67,48 +57,47 @@ function Homepage() {
         urlParams.set("solutions", 1);
 
         const response = await axios.get(
-          `${
-            import.meta.env.VITE_SERVER_URL
-          }/api/post/getPosts?${urlParams.toString()}`,
+          `${API_ROUTES.posts.getAll}?${urlParams.toString()}`,
           {
             withCredentials: true,
           }
         );
+
         setPosts(response.data?.data || []);
       } catch (error) {
         setPosts([]);
-        console.log(error);
+        console.error(error);
         toast.error("Failed to fetch posts");
       } finally {
         setIsLoading(false);
       }
     }
+
     fetchPosts();
   }, [searchParams]);
 
   function handleParamsChange(newParams) {
     const params = Object.fromEntries(searchParams.entries());
-    setSearchParams({ ...params, ...newParams, page: 1 });
+    setSearchParams({ ...params, ...newParams });
   }
 
   return (
     <div className="homepageBody">
+      {/* Top Section with background image */}
       <section className="topSection">
-        <div className="topsection1">
-          <img
-            className="logo"
-            src="src/assets/ioc_logo.png"
-            alt="Company Logo"
-          />
-          <h1>How Can We Help You?</h1>
+        <div className="overlay">
+          <div className="topContent">
+            <h1 className="homepageTitle">How Can We Help You?</h1>
+            <SearchBar />
+          </div>
         </div>
-        <SearchBar />
       </section>
 
+      {/* Mid Section with Filters */}
       <section className="midSection">
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <h1>Frequently Asked Questions</h1>
+        <div className="midHeader">
+          <h2>Frequently Asked Questions</h2>
+          <div className="filters">
             <SelectElement
               label="Department"
               value={department}
@@ -121,21 +110,26 @@ function Homepage() {
               setValue={(val) => handleParamsChange({ sort: val })}
               options={filterOptions}
             />
-          </div>
-          {user && (
-            <div>
+            {user && (
               <ModalWindow text="Add New Post">
                 <CreatePostForm />
               </ModalWindow>
-            </div>
-          )}
+            )}
+          </div>
         </div>
-        {isLoading ? <div>Loading...</div> : <PostSection posts={posts} />}
+
+        {/* Posts */}
+        {isLoading ? (
+          <div className="loading">Loading...</div>
+        ) : (
+          <PostSection posts={posts} />
+        )}
       </section>
 
-      <div style={{ display: "flex", justifyContent: "center" }}>
+      {/* Pagination */}
+      <div className="paginationWrapper">
         <Pagination
-          count={10} // Ideally should come from backend
+          count={10} // Replace with dynamic count from backend
           shape="rounded"
           page={page}
           onChange={(event, value) => handleParamsChange({ page: value })}

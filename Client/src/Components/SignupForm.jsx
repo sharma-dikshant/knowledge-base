@@ -12,6 +12,7 @@ import {
   InputLabel,
   FormControl,
 } from "@mui/material";
+import API_ROUTES from "../services/api";
 
 function SignupForm({ onSignup, setAuthMethod }) {
   const [allowedDepartments, setAllowedDepartments] = useState([]);
@@ -27,7 +28,7 @@ function SignupForm({ onSignup, setAuthMethod }) {
     async function getDepartment() {
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_SERVER_URL}/api/department/all`
+          `${API_ROUTES.departments.getAll}`
         );
         setAllowedDepartments(response.data.departments);
       } catch (error) {

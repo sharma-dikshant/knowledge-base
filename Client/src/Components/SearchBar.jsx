@@ -2,6 +2,8 @@ import axios from "axios";
 import { useState, useEffect } from "react";
 import { IoIosSearch } from "react-icons/io";
 import styles from "./Componentcss/searchBar.module.css";
+import { Link } from "react-router-dom";
+import API_ROUTES from "../services/api";
 
 function SearchBar() {
   const [text, setText] = useState("");
@@ -22,12 +24,11 @@ function SearchBar() {
     const fetchResults = async () => {
       try {
         const res = await axios.get(
-          `${
-            import.meta.env.VITE_SERVER_URL
-          }/api/post/search/?query=${searchQuery}`,
+          `${API_ROUTES.posts.search}?query=${searchQuery}`,
           { withCredentials: true }
         );
-        setResults(res.data.posts || []);
+        setResults(res.data.data || []);
+        // console.log(res.data.data);
         setShowDropdown(true);
       } catch (err) {
         console.error("Search error:", err);
@@ -65,7 +66,7 @@ function SearchBar() {
         <ul className={styles.dropdown}>
           {results.map((post) => (
             <li key={post._id} className={styles.dropdownItem}>
-              <a href={`/post/${post._id}`}>{post.title}</a>
+              <Link to={`/post/${post._id}`}>{post.title}</Link>
             </li>
           ))}
         </ul>

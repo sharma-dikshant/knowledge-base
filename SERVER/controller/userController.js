@@ -2,73 +2,58 @@ const User = require("../models/userModel");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/AppError");
 const ApiFeature = require("./../utils/APIFeatures");
+const ApiResponse = require("./../utils/ApiResponse");
 
 exports.getAllUser = catchAsync(async (req, res, next) => {
-  const baseQuery = User.find({});
+  let baseQuery = User.find({});
+
+  if (req.user.role === "admin" && req.query.inactive === "true") {
+    baseQuery = baseQuery.onlyInActive();
+  }
+
   const api = new ApiFeature(baseQuery)
     .paginate(req.query.page, req.query.limit)
     .sort(req.query.sort)
     .limitFields("-password -__v");
 
   const users = await api.query;
+  return new ApiResponse(200, "fetched users", users).send(res);
+});
+
+exports.createUser = catchAsync(async (req, res, next) => {
+  //TODO
+  const newUser = await User.create(req.body);
   res.status(200).json({
-    status: "success",
-    message: "fetched users",
-    data: users,
+    message: "success",
   });
 });
+
+exports.createUsersByCSV = catchAsync(async (req, res, next) => {
+  //TODO
+  res.status(200).json({
+    message: "success",
+  });
+});
+
 //update user
 exports.updateUser = catchAsync(async (req, res, next) => {
-  try {
-    const { employeeCode, ...updateFields } = req.body; // Extract `employeeCode` and other fields
-
-    if (!employeeCode) {
-      return res
-        .status(400)
-        .json({ message: "EmployeeCode is required to update user" });
-    }
-
-    const userData = await User.findOne({ EmployeeCode: employeeCode });
-    if (!userData) {
-      return res.status(404).json({ message: "User Not Found" });
-    }
-
-    // Filter out undefined or empty fields before updating
-    const filteredUpdates = Object.fromEntries(
-      Object.entries(updateFields).filter(
-        ([_, value]) => value !== undefined && value !== ""
-      )
-    );
-
-    // If no valid fields are provided, return an error
-    if (Object.keys(filteredUpdates).length === 0) {
-      return res
-        .status(400)
-        .json({ message: "No valid fields provided for update" });
-    }
-
-    // Update user data
-    const updatedData = await User.findByIdAndUpdate(
-      userData._id,
-      filteredUpdates,
-      { new: true }
-    );
-
-    return res
-      .status(200)
-      .json({ message: "User updated successfully", updatedData });
-  } catch (error) {
-    return res.status(500).json({ message: "Internal server error", error });
+  const newUser = await User.findByIdAndUpdate(req.params.userId, req.body, {
+    runValidators: true,
+    new: true,
+  });
+  if (!newUser) {
+    return next(new AppError("user not found!", 404));
   }
+  return new ApiResponse(200, "users updated successfully", newUser).send(res);
 });
 
 //delete userdata
 exports.deleteUser = catchAsync(async (req, res, next) => {
-  const user = await User.findByIdAndDelete(req.params.userId, { new: true });
+  const user = await User.findOne({ _id: req.params.userId });
   if (!user) return next(new AppError("no user found!", 404));
-  return res.status(204).json({
-    message: "successfully deleted user",
-  });
+
+  await user.softDelete();
+  return new ApiResponse(204, "user deleted successfully", null).send(res);
 });
 
 exports.getUser = (req, res) => {
@@ -85,13 +70,15 @@ exports.getUser = (req, res) => {
   });
 };
 
+// TODO admin can fetch activities of inactive user
 exports.getUserDetails = catchAsync(async (req, res, next) => {
-  const user = await User.findOne({ employeeId: req.params.employeeId });
-  if (!user) {
-    return next(new AppError("user user found!", 404));
+  let baseQuery = User.find({});
+  if (req.user.role === "admin") {
+    baseQuery = baseQuery.allUsers();
   }
-  res.status(200).json({
-    status: "success",
-    data: user,
-  });
+  const user = await baseQuery.findOne({ employeeId: req.params.employeeId });
+  if (!user) {
+    return next(new AppError("user not found!", 404));
+  }
+  return new ApiResponse(200, "user details fetched", user).send(res);
 });

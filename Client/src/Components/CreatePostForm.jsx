@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Button,
@@ -8,16 +8,24 @@ import {
   MenuItem,
   Chip,
   Stack,
+  FormControlLabel,
+  Checkbox,
+  FormControl,
+  InputLabel,
+  Select,
 } from "@mui/material";
 import axios from "axios";
 import toast from "react-hot-toast";
+import API_ROUTES from "../services/api";
+import SelectElement from "../ui/SelectElement";
 
 const defaultForm = {
   title: "",
   description: "",
   category: "",
   hashtags: [],
-  department: "",
+  department: null,
+  isPrivate: true,
 };
 
 const categories = ["feature", "bug", "enhancement"];
@@ -25,6 +33,19 @@ const categories = ["feature", "bug", "enhancement"];
 export default function CreatePostForm() {
   const [form, setForm] = useState(defaultForm);
   const [tagInput, setTagInput] = useState("");
+  const [departments, setDepartments] = useState([]);
+
+  useEffect(() => {
+    async function fetchDepartments() {
+      try {
+        const responses = await axios.get(`${API_ROUTES.departments.getAll}`);
+        setDepartments(responses.data?.departments || []);
+      } catch (error) {
+        toast.error("Failed to fetch departments");
+      }
+    }
+    fetchDepartments();
+  }, []);
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -48,21 +69,31 @@ export default function CreatePostForm() {
     }));
   };
 
-  async function handleSubmit(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      await axios.post(
-        `${import.meta.env.VITE_SERVER_URL}/api/post/createPost`,
-        form,
-        { withCredentials: true }
-      );
-      setForm(defaultForm);
-      toast.success("successfully created!");
-    } catch (error) {
-      console.log(error);
-      toast.error("failed to create new Post!");
+
+    if (!form.department) {
+      toast.error("Please select a department");
+      return;
     }
-  }
+
+    try {
+      const payload = {
+        ...form,
+        department: form.department?.name || "",
+        private: form.isPrivate,
+      };
+      await axios.post(`${API_ROUTES.posts.create}`, payload, {
+        withCredentials: true,
+      });
+      setForm(defaultForm);
+      setTagInput("");
+      toast.success("Successfully created post!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to create new post!");
+    }
+  };
 
   return (
     <Paper elevation={4} sx={{ maxWidth: 600, mx: "auto", p: 4 }}>
@@ -110,15 +141,29 @@ export default function CreatePostForm() {
           ))}
         </TextField>
 
-        <TextField
-          fullWidth
-          label="Department"
-          name="department"
-          value={form.department}
-          onChange={handleChange}
-          margin="normal"
-          required
-        />
+        <FormControl fullWidth margin="normal">
+          <InputLabel>Department</InputLabel>
+          <Select
+            label="Department"
+            value={form.department?.departmentId || ""}
+            onChange={(e) => {
+              const selectedDept = departments.find(
+                (d) => d.departmentId === e.target.value
+              );
+              console.log("Selected:", selectedDept); // ✅ This will now log
+              setForm((prev) => ({
+                ...prev,
+                department: selectedDept,
+              }));
+            }}
+          >
+            {departments.map((dept) => (
+              <MenuItem key={dept.departmentId} value={dept.departmentId}>
+                {dept.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
         {/* Hashtag Input */}
         <Box mt={2}>
@@ -144,6 +189,25 @@ export default function CreatePostForm() {
               />
             ))}
           </Stack>
+        </Box>
+
+        <Box mt={2}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={form.isPrivate}
+                onChange={(e) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    isPrivate: e.target.checked,
+                  }))
+                }
+                name="isPrivate"
+                color="primary"
+              />
+            }
+            label="Make this post private"
+          />
         </Box>
 
         <Button

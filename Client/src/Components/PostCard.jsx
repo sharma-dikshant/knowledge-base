@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import axios from "axios";
 import {
   Paper,
@@ -10,7 +10,6 @@ import {
   Divider,
   Box,
   Avatar,
-  Link,
   ToggleButton,
   ToggleButtonGroup,
 } from "@mui/material";
@@ -19,7 +18,12 @@ import {
   BiSolidUpvote,
   BiSolidDownvote,
   BiDownvote,
+  BiLock,
+  BiSolidLockOpen,
 } from "react-icons/bi";
+import toast from "react-hot-toast";
+import API_ROUTES from "../services/api";
+import { MdCancel, MdOutlineVerified } from "react-icons/md";
 
 function PostCard({ post }) {
   const user = useOutletContext();
@@ -43,23 +47,31 @@ function PostCard({ post }) {
   async function handleVote(type) {
     try {
       if (type === "upVote" && !upVoted) {
-        await axios.post(
-          `${import.meta.env.VITE_SERVER_URL}/api/post/upVote/${postId}`,
-          {},
-          { withCredentials: true }
-        );
-        setUpVoted(true);
-        setDownVoted(false);
-        setVotes((v) => v + 1);
+        try {
+          await axios.post(
+            `${API_ROUTES.posts.vote.up(postId)}`,
+            {},
+            { withCredentials: true }
+          );
+          setUpVoted(true);
+          setDownVoted(false);
+          setVotes((v) => v + 1);
+        } catch (error) {
+          toast.error("failed to upvote!");
+        }
       } else if (type === "downVote" && !downVoted) {
-        await axios.post(
-          `${import.meta.env.VITE_SERVER_URL}/api/post/downVote/${postId}`,
-          {},
-          { withCredentials: true }
-        );
-        setDownVoted(true);
-        setUpVoted(false);
-        setVotes((v) => Math.max(v - 1, 0));
+        try {
+          await axios.post(
+            `${API_ROUTES.posts.vote.down(postId)}`,
+            {},
+            { withCredentials: true }
+          );
+          setDownVoted(true);
+          setUpVoted(false);
+          setVotes((v) => Math.max(v - 1, 0));
+        } catch (error) {
+          toast.error("failed to downvote!");
+        }
       }
     } catch (error) {
       console.log(error);
@@ -70,13 +82,14 @@ function PostCard({ post }) {
     if (!newComment.trim()) return;
     try {
       await axios.post(
-        `${import.meta.env.VITE_SERVER_URL}/api/post/comment/${postId}`,
+        `${API_ROUTES.posts.comments.add(postId)}`,
         { content: newComment },
         { withCredentials: true }
       );
       setComments((prev) => [...prev, { content: newComment, author: user }]);
       setNewComment("");
     } catch (error) {
+      toast.error("failed to add comment!");
       console.log(error);
     }
   }
@@ -84,17 +97,36 @@ function PostCard({ post }) {
   return (
     <Paper sx={{ p: 3, mb: 3, border: "1px solid #ccc", borderRadius: 2 }}>
       <Box display="flex" flexDirection="column">
-        <Typography
-          variant="h6"
-          sx={{
-            textAlign: "left",
-            textDecoration: "none",
-            color: "black",
-            "&:hover": { textDecoration: "underline" },
-          }}
-        >
-          <a href={`/post/${post._id}`}>{post.title}</a>
-        </Typography>
+        {/* Title and Privacy Icon */}
+        <Box display="flex" alignItems="center" gap={1}>
+          {post.private ? (
+            <Chip
+              icon={<BiLock />}
+              label="Private"
+              size="small"
+              color="warning"
+            />
+          ) : (
+            <Chip
+              icon={<BiSolidLockOpen />}
+              label="Public"
+              size="small"
+              color="success"
+            />
+          )}
+
+          <Typography
+            variant="h6"
+            sx={{
+              textAlign: "left",
+              textDecoration: "none",
+              color: "black",
+              "&:hover": { textDecoration: "underline" },
+            }}
+          >
+            <Link to={`/post/${post._id}`}>{post.title}</Link>
+          </Typography>
+        </Box>
 
         <Box
           mt={1}
@@ -117,6 +149,21 @@ function PostCard({ post }) {
             }`}
             size="small"
           />
+          {post.statusChangedBy && (
+            <Chip
+              label={post.statusChangedBy.user.name.toUpperCase()}
+              size="small"
+              icon={
+                post.statusChangedBy.action === 2 ? (
+                  <MdOutlineVerified />
+                ) : (
+                  <MdCancel />
+                )
+              }
+              color={post.statusChangedBy.action === 2 ? "success" : "error"}
+              variant="outlined"
+            />
+          )}
           {user && (user.role === "admin" || user.role === "moderator") && (
             <a href={`/post/${postId}`}>Add Solution</a>
           )}
@@ -174,10 +221,7 @@ function PostCard({ post }) {
           ) : (
             comments.map((comment, idx) => (
               <Box key={idx} display="flex" alignItems="center" gap={1} mb={1}>
-                <Link
-                  href={`/u/${comment.author?.employeeId}`}
-                  underline="none"
-                >
+                <Link to={`/u/${comment.author?.employeeId}`} underline="none">
                   <Avatar
                     sx={{
                       bgcolor: "#1976d2",

@@ -1,15 +1,13 @@
 const express = require("express");
 const solutionController = require("./../controller/solutionController");
-const authController     = require("./../controller/authController");
+const authController = require("./../controller/authController");
 const router = express.Router();
 
+router.use(authController.protected);
 router.get("/:solutionId", solutionController.getSolution);
 
-router.use(
-  authController.protected,
-  authController.restrictTo("admin", "moderator")
-);
-router.post("/:postId", solutionController.createSolution);
+router.use(authController.restrictTo("admin", "moderator"));
+router.post("/posts/:postId", solutionController.createSolution);
 router.patch("/:solutionId", solutionController.updateSolution);
 router.delete("/:solutionId", solutionController.deleteSolution);
 

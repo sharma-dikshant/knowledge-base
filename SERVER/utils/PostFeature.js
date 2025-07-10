@@ -11,6 +11,11 @@ class PostFeature {
     return this;
   }
 
+  populateStatusChangedByUser() {
+    this.query = this.query.populate("statusChangedBy.user", "employeeId name");
+    return this;
+  }
+
   async populateComments(posts, limit = 5, sort = "-createdAt", ...fields) {
     const fieldStr = fields.join(" ") || "";
     const Detailedposts = await Promise.all(

@@ -9,27 +9,32 @@ const authRoutes = require("./routers/authRouter");
 const PostRoutes = require("./routers/postRouter");
 const solutionRoutes = require("./routers/solutionRouter");
 const departmentRoutes = require("./routers/departmentRouter");
+const errorController = require("./controller/errorController");
 
 const app = express();
+
 
 app.use(morgan("dev"));
 app.use(cookieParser());
 app.use(helmet());
 app.use(express.json());
-app.use(cors({ origin: "http://localhost:5173", credentials: true })); // Allow only frontend requests
 
-app.use("/api/user", userRoutes);
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://drsnk5lg-5173.inc1.devtunnels.ms",
+    ],
+    credentials: true,
+  })
+); // Allow only frontend requests
+
+
 app.use("/api/auth", authRoutes);
-app.use("/api/post", PostRoutes);
-app.use("/api/solution", solutionRoutes);
-app.use("/api/department", departmentRoutes);
-
-app.use("/", (req, res) => {
-  res.status(200).json({
-    status: "success",
-    data: "Welcome to knowledge base",
-  });
-});
+app.use("/api/users", userRoutes);
+app.use("/api/posts", PostRoutes);
+app.use("/api/solutions", solutionRoutes);
+app.use("/api/departments", departmentRoutes);
 
 app.use("*", (req, res) => {
   res.status(404).json({
@@ -37,15 +42,6 @@ app.use("*", (req, res) => {
   });
 });
 
-app.use((err, req, res, next) => {
-  console.log(err)
-  const code = err.code || 500;
-  const message = err.message || "internal server error";
-  return res.status(code).json({
-    status: "failed",
-    message,
-    error: err,
-  });
-});
+app.use(errorController);
 
 module.exports = app;

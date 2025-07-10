@@ -1,0 +1,206 @@
+import axios from "axios";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import {
+  Button,
+  Pagination,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  TableContainer,
+  Paper,
+  Select,
+  MenuItem,
+  InputBase,
+  Box,
+  Typography,
+} from "@mui/material";
+
+import { useLoaderData, useNavigate } from "react-router-dom";
+import API_ROUTES from "../services/api";
+
+function EmployeesDetails() {
+  const navigate = useNavigate();
+  const initialUsers = useLoaderData() || [];
+
+  const [users, setUsers] = useState(initialUsers);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [inactive, setInactive] = useState("false");
+  const [totalPages, setTotalPages] = useState(1);
+
+  const handleParamsChange = ({ page }) => {
+    setPage(page);
+  };
+
+  async function deleteUser(userId) {
+    try {
+      await axios.delete(`${API_ROUTES.users.delete(userId)}`, {
+        withCredentials: true,
+      });
+      toast.success("User deleted successfully!");
+      fetchUsers(); // Refresh the list after deletion
+    } catch (error) {
+      toast.error("Failed to delete user!");
+      console.error("Error in deleting user:", error.message);
+    }
+  }
+
+  async function fetchUsers() {
+    try {
+      const response = await axios.get(
+        `${API_ROUTES.users.getAll}?inactive=${inactive}&page=${page}`,
+        {
+          withCredentials: true,
+        }
+      );
+      setUsers(response.data.data);
+      setTotalPages(response.data.totalPages || 10); // Adjust if backend provides pagination metadata
+    } catch (error) {
+      toast.error("Failed to fetch users");
+    }
+  }
+
+  useEffect(() => {
+    fetchUsers();
+  }, [inactive, page]);
+
+  const filteredUsers = users.filter((user) =>
+    user.name?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <>
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={2}
+      >
+        <Typography variant="h5">Admin Dashboard - Employee Table</Typography>
+        <Select value={inactive} onChange={(e) => setInactive(e.target.value)}>
+          <MenuItem value="false">Active Users</MenuItem>
+          <MenuItem value="true">Inactive Users</MenuItem>
+        </Select>
+      </Box>
+
+      {/* Search Bar */}
+      <InputBase
+        placeholder="Search Employees..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        sx={{
+          mb: 2,
+          px: 2,
+          py: 1,
+          border: "1px solid #ccc",
+          borderRadius: "8px",
+          width: "300px",
+        }}
+      />
+
+      <Box mb={2}>
+        <Button
+          variant="contained"
+          color="primary"
+          sx={{ mr: 2 }}
+          // onClick={() => navigate("/create-user")}
+        >
+          Create New User
+        </Button>
+
+        <Button
+          variant="outlined"
+          color="secondary"
+          // onClick={() => navigate("/import-excel")}
+        >
+          Add Excel File of Users
+        </Button>
+      </Box>
+
+      {/* Users Table */}
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ color: "white", fontWeight: "700" }}>
+                Username
+              </TableCell>
+              <TableCell sx={{ color: "white", fontWeight: "700" }}>
+                Employee ID
+              </TableCell>
+              <TableCell sx={{ color: "white", fontWeight: "700" }}>
+                Department
+              </TableCell>
+              <TableCell sx={{ color: "white", fontWeight: "700" }}>
+                Email
+              </TableCell>
+              <TableCell sx={{ color: "white", fontWeight: "700" }}>
+                Designation
+              </TableCell>
+              <TableCell sx={{ color: "white", fontWeight: "700" }}>
+                Grade
+              </TableCell>
+              <TableCell sx={{ color: "white", fontWeight: "700" }}>
+                Actions
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map((emp) => (
+                <TableRow key={emp._id}>
+                  <TableCell>{emp.name?.toUpperCase()}</TableCell>
+                  <TableCell>{emp.employeeId}</TableCell>
+                  <TableCell>{emp.department?.toUpperCase()}</TableCell>
+                  <TableCell>{emp.email || "Not Available"}</TableCell>
+                  <TableCell>{emp.designation || "Not Available"}</TableCell>
+                  <TableCell>{emp.grade || "Not Available"}</TableCell>
+                  <TableCell>
+                    <Button
+                      size="small"
+                      color="primary"
+                      onClick={() => navigate(`/u/${emp.employeeId}`)}
+                    >
+                      View
+                    </Button>
+                    <Button size="small" color="warning">
+                      Edit
+                    </Button>
+                    <Button
+                      size="small"
+                      color="error"
+                      onClick={() => deleteUser(emp._id)}
+                    >
+                      Delete
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} align="center">
+                  No users found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {/* Pagination */}
+      <Box display="flex" justifyContent="center" mt={3}>
+        <Pagination
+          count={totalPages}
+          shape="rounded"
+          page={page}
+          onChange={(event, value) => handleParamsChange({ page: value })}
+        />
+      </Box>
+    </>
+  );
+}
+
+export default EmployeesDetails;

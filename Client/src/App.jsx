@@ -1,53 +1,70 @@
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import MainBody from "./Components/MainBody";
-import Userpage from "./Pages/Userpage";
-import Homepage from "./Pages/Homepage";
-import AdminHomepage from "./Pages/AdminHomepage";
-import Moderator from "./Pages/Modetator";
-import SearchPage from "./Pages/SearchPage";
-import AuthPage from "./Pages/AuthPage";
+import {
+  createBrowserRouter,
+  Navigate,
+  RouterProvider,
+} from "react-router-dom";
+import MainBody from "./ui/MainBody";
+import Userpage from "./pages/Userpage";
+import Homepage from "./pages/Homepage";
+import AdminHomepage from "./pages/AdminHomepage";
+import Moderator from "./pages/Modetator";
+// import SearchPage from "./pages/SearchPage";
+import AuthPage from "./pages/AuthPage";
 import { Toaster } from "react-hot-toast";
-import PostPage from "./Pages/PostPage";
+import PostPage from "./pages/PostPage";
 
 import loader from "./utils/dataLoader";
+import PostVault from "./pages/PostVault";
 
 const router = createBrowserRouter([
   {
-    element: <MainBody />,
-    loader: loader.loadUser,
+    path: "/",
+    element: <MainBody />, // layout wrapper
+    loader: loader.loadUser, // called before any child loads
     children: [
       {
-        path: "/",
         index: true,
+        element: <Navigate to="/home" replace />,
+      },
+      {
+        path: "home",
         element: <Homepage />,
       },
       {
-        path: "/auth",
-        element: <AuthPage />,
-      },
-      {
-        path: "/u/:id",
+        path: "u/:id",
         element: <Userpage />,
       },
       {
-        path: "/post/:id",
+        path: "post/:postId",
         element: <PostPage />,
         loader: loader.loadPostDetails,
       },
       {
-        path: "/admin",
+        path: "admin",
         element: <AdminHomepage />,
-        loader: loader.loadAllUsers
+        loader: loader.loadAllUsers,
       },
       {
-        path: "/moderator",
+        path: "moderator",
         element: <Moderator />,
       },
+      // {
+      //   path: "search",
+      //   element: <SearchPage />,
+      // },
       {
-        path: "/search",
-        element: <SearchPage />,
+        path: "/post-vault",
+        element: <PostVault />,
       },
     ],
+  },
+  {
+    path: "/auth",
+    element: <AuthPage />, // not wrapped in MainBody
+  },
+  {
+    path: "*",
+    element: <h1>Page Not Found | 404</h1>,
   },
 ]);
 

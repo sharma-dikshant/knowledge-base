@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import toast from "react-hot-toast";
-
+import API_ROUTES from "../services/api";
 function CreateSolutionForm({ post }) {
   const [solution, setSolution] = useState("");
 
@@ -17,7 +17,7 @@ function CreateSolutionForm({ post }) {
     if (solution.trim()) {
       try {
         await axios.post(
-          `${import.meta.env.VITE_SERVER_URL}/api/solution/${post._id}`,
+          `${API_ROUTES.posts.solutions.add(post._id)}`,
           { description: solution.trim() },
           { withCredentials: true }
         );

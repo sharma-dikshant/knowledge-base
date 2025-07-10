@@ -1,25 +1,25 @@
 import { useState } from "react";
 import axios from "axios";
-import LoginForm from "./../Components/LoginForm";
-import SignupForm from "./../Components/SignupForm";
+import LoginForm from "../Components/LoginForm";
+import SignupForm from "../Components/SignupForm";
 import { Box, CircularProgress } from "@mui/material";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import API_ROUTES from "../services/api";
 
 function AuthPage() {
   const [authMethod, setAuthMethod] = useState("login");
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   async function onLogin(credentials) {
     try {
       setIsLoading(true);
-      const response = await axios.post(
-        `${import.meta.env.VITE_SERVER_URL}/api/auth/login`,
-        credentials,
-        {
-          withCredentials: true,
-        }
-      );
+      const response = await axios.post(API_ROUTES.auth.login, credentials, {
+        withCredentials: true,
+      });
       toast.success("Login Success!");
+      navigate("/home");
     } catch (error) {
       toast.error("Login Failed!");
       console.log(error);
@@ -30,13 +30,9 @@ function AuthPage() {
   async function onSignup(credentials) {
     try {
       setIsLoading(true);
-      const response = await axios.post(
-        `${import.meta.env.VITE_SERVER_URL}/api/auth/signup`,
-        credentials,
-        {
-          withCredentials: true,
-        }
-      );
+      const response = await axios.post(API_ROUTES.auth.signup, credentials, {
+        withCredentials: true,
+      });
       toast.success("Sign Up Success!");
     } catch (error) {
       console.log(error);
