@@ -12,6 +12,7 @@ const API_ROUTES = {
     getAll: `${BASE_URL}/api/users/all`,
     delete: (id) => `${BASE_URL}/api/users/${id}`,
     update: (id) => `${BASE_URL}/api/users/${id}`,
+    updateRole: (id) => `${BASE_URL}/api/users/change-role/${id}`,
   },
   departments: {
     getAll: `${BASE_URL}/api/departments/all`,

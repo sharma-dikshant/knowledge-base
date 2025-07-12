@@ -151,7 +151,7 @@ function PostCard({ post }) {
           />
           {post.statusChangedBy && (
             <Chip
-              label={post.statusChangedBy.user.name.toUpperCase()}
+              label={post.statusChangedBy?.user?.name.toUpperCase()}
               size="small"
               icon={
                 post.statusChangedBy.action === 2 ? (

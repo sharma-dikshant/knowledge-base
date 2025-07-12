@@ -72,19 +72,39 @@ function UserProfilePage() {
         <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
           <Box display="flex" alignItems="center" gap={2}>
             <Avatar sx={{ bgcolor: "primary.main", width: 56, height: 56 }}>
-              {userDetails.name.slice(0, 2).toUpperCase()}
+              {userDetails?.name?.slice(0, 2)?.toUpperCase() ?? "??"}
             </Avatar>
             <Box>
-              <Typography variant="h6">{userDetails.name}</Typography>
+              <Typography variant="h6">
+                {userDetails?.name?.toUpperCase() ?? "N/A"}
+              </Typography>
               <Typography variant="body2" color="text.secondary">
-                Employee ID: {userDetails.employeeId}
+                Employee ID: {userDetails?.employeeId ?? "N/A"}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Department: {userDetails?.department ?? "N/A"}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Email: {userDetails?.email ?? "N/A"}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Mobile: {userDetails?.mobile ?? "N/A"}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Grade: {userDetails?.grade?.toUpperCase() ?? "N/A"}
               </Typography>
               <Chip
-                label={`Role: ${userDetails.role}`}
+                label={`Role: ${userDetails?.role ?? "N/A"}`}
                 size="small"
                 color="info"
                 sx={{ mt: 1 }}
               />
+              <Typography variant="body2" color="text.secondary" mt={1}>
+                Joined:{" "}
+                {userDetails?.createdAt
+                  ? new Date(userDetails.createdAt).toLocaleString()
+                  : "N/A"}
+              </Typography>
             </Box>
           </Box>
 

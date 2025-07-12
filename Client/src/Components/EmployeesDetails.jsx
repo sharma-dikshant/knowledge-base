@@ -16,10 +16,14 @@ import {
   InputBase,
   Box,
   Typography,
+  Chip,
+  Tooltip,
 } from "@mui/material";
 
 import { useLoaderData, useNavigate } from "react-router-dom";
 import API_ROUTES from "../services/api";
+import { GrView } from "react-icons/gr";
+import { MdDelete } from "react-icons/md";
 
 function EmployeesDetails() {
   const navigate = useNavigate();
@@ -28,7 +32,7 @@ function EmployeesDetails() {
   const [users, setUsers] = useState(initialUsers);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [inactive, setInactive] = useState("false");
+  const [active, setActive] = useState("true");
   const [totalPages, setTotalPages] = useState(1);
 
   const handleParamsChange = ({ page }) => {
@@ -48,10 +52,38 @@ function EmployeesDetails() {
     }
   }
 
+  async function makeModerator(empId) {
+    try {
+      await axios.patch(
+        `${API_ROUTES.users.updateRole(empId)}`,
+        {
+          role: "moderator",
+        },
+        { withCredentials: true }
+      );
+      toast.success("moderator created!");
+    } catch (error) {
+      toast.error("failed to create moderator");
+    }
+  }
+
+  async function removeModerator(empId) {
+    try {
+      await axios.patch(
+        `${API_ROUTES.users.updateRole(empId)}`,
+        { role: "user" },
+        { withCredentials: true }
+      );
+      toast.success("moderator removed");
+    } catch (error) {
+      toast.error("failed to remove moderator");
+    }
+  }
+
   async function fetchUsers() {
     try {
       const response = await axios.get(
-        `${API_ROUTES.users.getAll}?inactive=${inactive}&page=${page}`,
+        `${API_ROUTES.users.getAll}?active=${active}&page=${page}`,
         {
           withCredentials: true,
         }
@@ -65,7 +97,7 @@ function EmployeesDetails() {
 
   useEffect(() => {
     fetchUsers();
-  }, [inactive, page]);
+  }, [active, page]);
 
   const filteredUsers = users.filter((user) =>
     user.name?.toLowerCase().includes(search.toLowerCase())
@@ -80,9 +112,9 @@ function EmployeesDetails() {
         mb={2}
       >
         <Typography variant="h5">Admin Dashboard - Employee Table</Typography>
-        <Select value={inactive} onChange={(e) => setInactive(e.target.value)}>
-          <MenuItem value="false">Active Users</MenuItem>
-          <MenuItem value="true">Inactive Users</MenuItem>
+        <Select value={active} onChange={(e) => setActive(e.target.value)}>
+          <MenuItem value="true">Active Users</MenuItem>
+          <MenuItem value="false">Inactive Users</MenuItem>
         </Select>
       </Box>
 
@@ -152,30 +184,61 @@ function EmployeesDetails() {
             {filteredUsers.length > 0 ? (
               filteredUsers.map((emp) => (
                 <TableRow key={emp._id}>
-                  <TableCell>{emp.name?.toUpperCase()}</TableCell>
+                  <TableCell>
+                    {emp.role === "admin" && (
+                      <Tooltip title="Admin">
+                        <Chip label="A" size="small" color="error" />
+                      </Tooltip>
+                    )}
+                    {emp.role === "moderator" && (
+                      <Tooltip title="Moderator">
+                        <Chip label="M" size="small" color="warning" />
+                      </Tooltip>
+                    )}
+                    {emp.name?.toUpperCase()}
+                  </TableCell>
                   <TableCell>{emp.employeeId}</TableCell>
                   <TableCell>{emp.department?.toUpperCase()}</TableCell>
                   <TableCell>{emp.email || "Not Available"}</TableCell>
                   <TableCell>{emp.designation || "Not Available"}</TableCell>
                   <TableCell>{emp.grade || "Not Available"}</TableCell>
-                  <TableCell>
+                  <TableCell
+                    style={{ display: "flex", justifyContent: "space-between" }}
+                  >
                     <Button
                       size="small"
                       color="primary"
                       onClick={() => navigate(`/u/${emp.employeeId}`)}
                     >
-                      View
+                      <GrView size="20px" />
                     </Button>
-                    <Button size="small" color="warning">
-                      Edit
-                    </Button>
-                    <Button
-                      size="small"
-                      color="error"
-                      onClick={() => deleteUser(emp._id)}
-                    >
-                      Delete
-                    </Button>
+                    {emp.active && emp.role === "user" && (
+                      <Button
+                        size="small"
+                        color="warning"
+                        onClick={() => makeModerator(emp.employeeId)}
+                      >
+                        Promote
+                      </Button>
+                    )}
+                    {emp.role === "moderator" && (
+                      <Button
+                        size="small"
+                        color="warning"
+                        onClick={() => removeModerator(emp.employeeId)}
+                      >
+                        Demote
+                      </Button>
+                    )}
+                    {emp.active && emp.role !== "admin" && (
+                      <Button
+                        size="small"
+                        color="error"
+                        onClick={() => deleteUser(emp._id)}
+                      >
+                        <MdDelete size="20px" />
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))

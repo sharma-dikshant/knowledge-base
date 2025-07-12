@@ -43,7 +43,15 @@ function AuthPage() {
   }
 
   return (
-    <div>
+    <div
+      style={{
+        padding: "20px",
+        height: "80vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+      }}
+    >
       {authMethod === "login" &&
         (isLoading ? (
           <Box sx={{ display: "flex" }}>

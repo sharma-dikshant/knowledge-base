@@ -15,5 +15,6 @@ router.delete("/:userId", userController.deleteUser);
 router.get("/all", userController.getAllUser);
 router.post("/", userController.createUser);
 router.post("/multiple", userController.createUsersByCSV);
+router.patch("/change-role/:employeeId", userController.changeRole);
 
 module.exports = router;

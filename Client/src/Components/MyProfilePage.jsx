@@ -65,6 +65,7 @@ function MyProfilePage() {
           email: data.email || "",
           grade: data.grade || "",
           mobile: data.mobile || "",
+          department: data.department || "",
         });
       } catch (err) {
         toast.error("Error! No User found");

@@ -8,6 +8,12 @@ const USER_ROLES = {
   MODERATOR: "moderator",
 };
 
+const USER_STATUS = {
+  INACTIVE: -1,
+  ACTIVE: 1,
+  ALL: 2,
+};
+
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -67,27 +73,19 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-userSchema.pre(/^find/, filterOnlyActive);
-userSchema.pre(/^findOneAnd/, filterOnlyActive);
-
-userSchema.query.onlyInActive = function () {
-  this.inActiveFlag = true;
-  return this.where({ active: false });
-};
-
-userSchema.query.allUsers = function () {
-  this.allUsers = true;
-  return this.where({ });
-};
-
-function filterOnlyActive(next) {
-  if (this.allUsers) return next();
-  if (this.inActiveFlag) return next();
-  this.where({ active: true });
+/* Query functions for retriving desired user */
+// hide inactive user
+userSchema.pre(/^find/, function (next) {
+  const filter = this.getFilter();
+  if (filter.active && filter.active === USER_STATUS.INACTIVE) {
+    this.find({ active: { $ne: true } });
+  } else {
+    this.find({ active: { $ne: false } });
+  }
   next();
-}
+});
 
-
+/* Instance Method */
 userSchema.methods.softDelete = function () {
   this.isSoftDeleting = true; // to avoid pre save middleware
   this.active = false;
@@ -95,7 +93,7 @@ userSchema.methods.softDelete = function () {
   return this.save();
 };
 
-// preventing hard delete
+/* preventing accidental hard delete */
 userSchema.pre("deleteOne", { query: true }, async function (next) {
   await this.updateOne({}, { active: false, deletedAt: new Date() });
   next();

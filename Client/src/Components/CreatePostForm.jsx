@@ -96,7 +96,10 @@ export default function CreatePostForm() {
   };
 
   return (
-    <Paper elevation={4} sx={{ maxWidth: 600, mx: "auto", p: 4 }}>
+    <Paper
+      elevation={4}
+      sx={{ maxWidth: 600, mx: "auto", p: 4, height: "100%" }}
+    >
       <Typography variant="h5" gutterBottom>
         Create New Post
       </Typography>
